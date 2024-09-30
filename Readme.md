@@ -1,6 +1,6 @@
 # CUE Language Server Protocol (LSP)
 
-<>[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bobmaertz/cuelang-lsp)](https://goreportcard.com/report/github.com/bobmaertz/cuelang-lsp)
 [![Build Status](https://github.com/bobmaertz/cuelang-lsp/workflows/Build/badge.svg)](https://github.com/bobmaertz/cuelang-lsp/actions)
 
