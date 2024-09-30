@@ -22,7 +22,7 @@ func main() {
 	}
 
 	l := getLogger(filepath)
-    l.Printf("Version: %s", version.Version())
+	l.Printf("Version: %s", version.Version())
 	serve.Serve(l)
 }
 

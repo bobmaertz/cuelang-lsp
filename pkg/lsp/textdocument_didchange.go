@@ -15,4 +15,3 @@ type TextDocumentContentChangeEvent struct {
 	RangeLength int    `json:"rangeLength,omitempty"`
 	Text        string `json:"text"`
 }
-

@@ -55,7 +55,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 		},
 		Result: InitializeResult{
 			Capabilities: ServerCapabilities{
-                TextDocumentSync: 1,
+				TextDocumentSync:           1,
 				DocumentFormattingProvider: true,
 			},
 			ServerInfo: ServerInfo{

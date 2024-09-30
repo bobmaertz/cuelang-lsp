@@ -8,4 +8,3 @@ type DidOpenNotification struct {
 type DidOpenTextDocumentParams struct {
 	TextDocument TextDocumentItem `json:"textDocument"`
 }
-
