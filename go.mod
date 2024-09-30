@@ -1,6 +1,6 @@
 module github.com/bobmaertz/cuelang-lsp
 
-go 1.22.2
+go 1.22
 
 require cuelang.org/go v0.10.0
 
