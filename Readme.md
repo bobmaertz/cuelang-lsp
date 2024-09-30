@@ -6,6 +6,8 @@
 
 A Language Server Protocol implementation for the CUE language.
 
+** This project is a work in progress and may not be completely functional yet **
+
 ## Table of Contents
 
 - [Features](#features)
