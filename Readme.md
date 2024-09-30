@@ -2,7 +2,7 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Go Report Card](https://goreportcard.com/badge/github.com/bobmaertz/cuelang-lsp)](https://goreportcard.com/report/github.com/bobmaertz/cuelang-lsp)
-[![Build Status](https://github.com/bobmaertz/cuelang-lsp/workflows/go.yml/badge.svg)](https://github.com/bobmaertz/cuelang-lsp/actions)
+[![Build Status](https://github.com/bobmaertz/cuelang-lsp/actions/workflows/go.yml/badge.svg)](https://github.com/bobmaertz/cuelang-lsp/actions)
 
 A Language Server Protocol implementation for the CUE language.
 
