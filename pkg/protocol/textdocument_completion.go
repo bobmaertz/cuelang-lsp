@@ -1,4 +1,6 @@
-package lsp
+package protocol
+
+import "github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 
 type TextCompletionRequest struct {
 	Request
@@ -23,7 +25,7 @@ func NewTextCompletionResponse(id int) TextCompletionResponse {
 
 	return TextCompletionResponse{
 		Response: Response{
-			Rpc: "2.0",
+			Rpc: rpc.Version,
 			Id:  id,
 		},
 	}

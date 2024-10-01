@@ -1,8 +1,12 @@
-package lsp
+package protocol
+
+type TextDocumentIdentifier struct {
+	Uri string `json:"uri"`
+}
 
 type VersionedTextDocumentIdentifier struct {
-	Uri     string `json:"uri"`
-	Version int    `json:"version"`
+	TextDocumentIdentifier
+	Version int `json:"version"`
 }
 
 type TextDocumentItem struct {

@@ -1,4 +1,4 @@
-package lsp
+package protocol
 
 /* LSP defines the interation and types of the LSP protocol.*/
 type Request struct {

@@ -5,8 +5,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/bobmaertz/cuelang-lsp/pkg/lsp/handler"
-	"github.com/bobmaertz/cuelang-lsp/pkg/lsp/rpc"
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/handler"
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 )
 
 func Serve(l *log.Logger) {

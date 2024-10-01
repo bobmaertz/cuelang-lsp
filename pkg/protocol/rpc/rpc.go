@@ -8,6 +8,8 @@ import (
 	"strconv"
 )
 
+const Version = "2.0" 
+
 type BaseMessage struct {
 	Method string
 }

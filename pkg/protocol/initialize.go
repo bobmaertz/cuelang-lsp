@@ -1,4 +1,9 @@
-package lsp
+package protocol
+
+import (
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
+	"github.com/bobmaertz/cuelang-lsp/pkg/version"
+)
 
 type InitializeRequest struct {
 	Request
@@ -50,7 +55,7 @@ type InitializeResponse struct {
 func NewInitializeResponse(id int) InitializeResponse {
 	return InitializeResponse{
 		Response: Response{
-			Rpc: "2.0",
+			Rpc: rpc.Version,
 			Id:  id,
 		},
 		Result: InitializeResult{
@@ -60,7 +65,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 			},
 			ServerInfo: ServerInfo{
 				Name:    "cuelang-lsp",
-				Version: "0.0.1-alpha",
+				Version: version.Version(),
 			},
 		},
 	}

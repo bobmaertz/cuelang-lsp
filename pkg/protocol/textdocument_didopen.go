@@ -1,4 +1,4 @@
-package lsp
+package protocol
 
 type DidOpenNotification struct {
 	Notification

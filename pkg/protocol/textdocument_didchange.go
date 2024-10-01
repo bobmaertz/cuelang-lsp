@@ -1,4 +1,4 @@
-package lsp
+package protocol
 
 type DidChangeNotification struct {
 	Notification

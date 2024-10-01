@@ -5,7 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/bobmaertz/cuelang-lsp/pkg/lsp/serve"
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/serve"
 	"github.com/bobmaertz/cuelang-lsp/pkg/version"
 )
 

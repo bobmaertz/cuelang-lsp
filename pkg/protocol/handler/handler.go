@@ -4,9 +4,12 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"os"
+	"strings"
 
-	"github.com/bobmaertz/cuelang-lsp/pkg/lsp"
-	"github.com/bobmaertz/cuelang-lsp/pkg/lsp/rpc"
+	"github.com/bobmaertz/cuelang-lsp/pkg/fmtr"
+	lsp "github.com/bobmaertz/cuelang-lsp/pkg/protocol"
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 )
 
 func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte) {
@@ -47,7 +50,35 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 	case "textDocument/didSave":
 		l.Printf("did Save: %v", string(contents))
 	case "textDocument/formatting":
-		l.Printf("formatting: %v", "<>")
+		var request lsp.TextFormatRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			l.Printf("unable to unmarshal textDocument/formatting request: %v\n", err)
+			return
+		}
+
+		// Todo: fix this hacky implementation
+		f := strings.TrimPrefix(request.Params.TextDocument.Uri, "file://")
+		c, _ := os.ReadFile(f)
+		l.Printf(f)
+		update, err := fmtr.Format("", c)
+		if err != nil {
+			l.Printf("error %v", err)
+			return
+		}
+
+		response := FormattingResponse{
+			Response: lsp.Response{
+				Id: request.Id,
+			},
+		}
+		t := TextEdit{
+			NewText: string(update),
+		}
+
+		response.Result = append(response.Result, t)
+		out := rpc.EncodeMessage(response)
+		fmt.Print(out)
+		l.Printf("didFormat> %v\n", request)
 	case "textDocument/completion":
 		var request lsp.TextCompletionRequest
 		if err := json.Unmarshal(contents, &request); err != nil {
@@ -61,4 +92,52 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 		l.Printf("received method: %s, message: %s\n", method, contents)
 		// l.Printf("state: %v", state)
 	}
+}
+
+type FormattingResponse struct {
+	lsp.Response
+	Result []TextEdit `json:"result,omitempty"`
+}
+
+// TODO: move me somewhere else
+type TextEdit struct {
+	/**
+	 * The range of the text document to be manipulated. To insert
+	 * text into a document create a range where start === end.
+	 */
+	Range Range `json:"range"`
+
+	/**
+	 * The string to be inserted. For delete operations use an
+	 * empty string.
+	 */
+	NewText string `json:"newText"`
+}
+
+type Range struct {
+	/**
+	 * The range's start position.
+	 */
+	Start Position `json:"start"`
+
+	/**
+	 * The range's end position.
+	 */
+	End Position `json:"end"`
+}
+
+type Position struct {
+	/**
+	 * Line position in a document (zero-based).
+	 */
+	Line int `json:"line"`
+
+	/**
+	 * Character offset on a line in a document (zero-based). The meaning of this
+	 * offset is determined by the negotiated `PositionEncodingKind`.
+	 *
+	 * If the character value is greater than the line length it defaults back
+	 * to the line length.
+	 */
+	Character int `json:"character"`
 }
