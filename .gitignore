@@ -25,3 +25,8 @@ go.work.sum
 
 # env file
 .env
+
+
+# Dont store metamodel 
+**/metaModel.json
+**/test.go 
