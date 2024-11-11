@@ -90,6 +90,7 @@ type Type struct {
 }
 
 func main() {
+    //TOOD: Read in from stdin ..
 	b, err := os.ReadFile("testdata/metaModel.json")
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
@@ -132,9 +133,9 @@ func main() {
 		for _, p := range s.Properties {
 			if p.Documentation != "" {
                 doc := strings.ReplaceAll(p.Documentation, "\n", "")
-				fmt.Fprintf(fileWriter, "\t //%s\n", doc)
+				fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
 			}
-			fmt.Fprintf(fileWriter, "\t %s %s\n", p.Name, p.Type.Name)
+			fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), p.Type.Name)
 		}
 
 		fmt.Fprint(fileWriter, end)
@@ -142,4 +143,13 @@ func main() {
 
 	// o, _ := json.MarshalIndent(model, "", "    ")
 	// fmt.Print(string(o))
+}
+
+
+
+func ToTitleCase(s string) string {
+    if s == ""{
+        return s 
+    }
+    return strings.ToUpper(string(s[0]))+ s[1:]
 }
