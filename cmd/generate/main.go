@@ -132,7 +132,7 @@ func main() {
 		// TODO: each field
 		for _, p := range s.Properties {
 			if p.Documentation != "" {
-                doc := strings.ReplaceAll(p.Documentation, "\n", "")
+                doc := strings.ReplaceAll(p.Documentation, "\n", " ")
 				fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
 			}
 			fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), p.Type.Name)
