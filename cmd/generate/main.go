@@ -136,8 +136,6 @@ func main() {
 				}
 				n := ConvertType(p.Type.Name)
 				fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), n)
-				// TODO: Rework
-				//continue
 			}
 			/*
 			               if p.Type.Kind == "array" {
@@ -148,7 +146,11 @@ func main() {
 
 		fmt.Fprint(fileWriter, end)
 	}
-
+	err = fileWriter.Flush()
+	if err != nil {
+		os.Stderr.Write([]byte(err.Error()))
+		os.Exit(16)
+	}
 	// o, _ := json.MarshalIndent(model, "", "    ")
 	// fmt.Print(string(o))
 }
@@ -157,16 +159,16 @@ func ConvertType(s string) string {
 	switch s {
 	case "boolean":
 		return "bool"
-    case "uinteger":
-        return "uint" 
-    case "integer":
-        return "int" 
-    case "decimal":
-        return "float64"
-    case "LSPAny":
-        return "interface{}"
+	case "uinteger":
+		return "uint"
+	case "integer":
+		return "int"
+	case "decimal":
+		return "float64"
+	case "LSPAny":
+		return "interface{}"
 	}
-    
+
 	return s
 }
 
