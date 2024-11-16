@@ -90,15 +90,14 @@ type Type struct {
 }
 
 func main() {
-    //TOOD: Read in from stdin ..
+	// TOOD: Read in from stdin ..
 	b, err := os.ReadFile("testdata/metaModel.json")
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
 		os.Exit(10)
 	}
 
-
-    //Unmarshall into go represetation 
+	// Unmarshall into go represetation
 	model := &MetaModel{}
 	err = json.Unmarshal(b, model)
 	if err != nil {
@@ -106,8 +105,8 @@ func main() {
 		os.Exit(15)
 	}
 
-    //TODO: Specify package. 
-    //Create output grammer file
+	// TODO: Specify package.
+	// Create output grammer file
 	file, err := os.OpenFile("test.go", os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
@@ -117,25 +116,34 @@ func main() {
 
 	fileWriter := bufio.NewWriter(file)
 
-    //TODO: Specify package 
-	fmt.Fprint(fileWriter,  "package main\n")
+	// TODO: Specify package
+	fmt.Fprint(fileWriter, "package main\n")
 
-
-    // For each structure.. 
+	// For each structure..
 	for _, s := range model.Structures {
 
-        //TODO: This is a good spot to use a template instead.. 
+		// TODO: This is a good spot to use a template instead..
 		start := "type %s struct {\n"
 		end := "}\n"
-		fmt.Fprintf(fileWriter,  start, s.Name)
+		fmt.Fprintf(fileWriter, start, s.Name)
 
 		// TODO: each field
 		for _, p := range s.Properties {
-			if p.Documentation != "" {
-                doc := strings.ReplaceAll(p.Documentation, "\n", " ")
-				fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
+			if p.Type.Name != "" {
+				if p.Documentation != "" {
+					doc := strings.ReplaceAll(p.Documentation, "\n", " ")
+					fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
+				}
+				n := ConvertType(p.Type.Name)
+				fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), n)
+				// TODO: Rework
+				//continue
 			}
-			fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), p.Type.Name)
+			/*
+			               if p.Type.Kind == "array" {
+			   				fmt.Fprintf(fileWriter, "\t %s []%s\n", ToTitleCase(p.Name), p.Type.Element.Name)
+			               }
+			*/
 		}
 
 		fmt.Fprint(fileWriter, end)
@@ -145,11 +153,26 @@ func main() {
 	// fmt.Print(string(o))
 }
 
-
+func ConvertType(s string) string {
+	switch s {
+	case "boolean":
+		return "bool"
+    case "uinteger":
+        return "uint" 
+    case "integer":
+        return "int" 
+    case "decimal":
+        return "float64"
+    case "LSPAny":
+        return "interface{}"
+	}
+    
+	return s
+}
 
 func ToTitleCase(s string) string {
-    if s == ""{
-        return s 
-    }
-    return strings.ToUpper(string(s[0]))+ s[1:]
+	if s == "" {
+		return s
+	}
+	return strings.ToUpper(string(s[0])) + s[1:]
 }
