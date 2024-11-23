@@ -21,11 +21,16 @@ type MetaModel struct {
 	// Notifications handle the async notifications from the LSP
 	Notifications []Request `json:"notifications"`
 	// Enumerations <TODO>
-	Enumerations []interface{} `json:"enumerations"`
+	Enumerations []Enumeration `json:"enumerations"`
 	// TypeAliases <TODO>
-	TypeAliases []interface{} `json:"typeAliases"`
+	TypeAliases []Type `json:"typeAliases"`
 }
 
+type Enumeration struct {
+	Name   string  `json:"name"`
+	Type   Type    `json:"type"`
+	Values []Value `json:"values"`
+}
 type Structures struct {
 	Name       string       `json:"name"`
 	Properties []Properties `json:"properties"`
@@ -89,6 +94,12 @@ type Type struct {
 	Since   string      `json:"single,omitempty"`
 }
 
+type Value struct {
+	Name          string      `json:"name"`
+	Value         interface{} `json:"value"`
+	Documentation string      `json:"documentation"`
+}
+
 func main() {
 	// TOOD: Read in from stdin ..
 	b, err := os.ReadFile("testdata/metaModel.json")
@@ -146,13 +157,26 @@ func main() {
 
 		fmt.Fprint(fileWriter, end)
 	}
+
+	for _, e := range model.Enumerations {
+		start := "type %s %s\n"
+		fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name))
+	}
+
+	for _, t := range model.TypeAliases {
+
+        //TODO: Propertly parse type. 
+		typ := "interface{}"
+
+		start := "type %s %s\n"
+		fmt.Fprintf(fileWriter, start, t.Name, typ)
+	}
+	// Dont forget to flush to file or might lose the info in the buffer
 	err = fileWriter.Flush()
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
 		os.Exit(16)
 	}
-	// o, _ := json.MarshalIndent(model, "", "    ")
-	// fmt.Print(string(o))
 }
 
 func ConvertType(s string) string {
@@ -167,6 +191,14 @@ func ConvertType(s string) string {
 		return "float64"
 	case "LSPAny":
 		return "interface{}"
+	case "URI":
+		// This is a base type but doesnt have a specific definition associated with it.
+		// using string for now but consider unstable
+		return "string"
+	case "DocumentUri":
+		// This is a base type but doesnt have a specific definition associated with it.
+		// using string for now but consider unstable
+		return "string"
 	}
 
 	return s
