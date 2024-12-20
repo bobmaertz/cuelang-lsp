@@ -3,106 +3,44 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"flag"
 	"fmt"
 	"os"
 	"strings"
 )
 
-// Metamodel is the top level specification for LSP.
-type MetaModel struct {
-	// Metadata contains the vrsions information about the document.
-	Metadata struct {
-		Version string `json:"version"`
-	} `json:"metaData"`
-	// Requests defined the request parameters
-	Request []Request `json:"requests"`
-	// Structures handle the models
-	Structures []Structures `json:"structures"`
-	// Notifications handle the async notifications from the LSP
-	Notifications []Request `json:"notifications"`
-	// Enumerations <TODO>
-	Enumerations []Enumeration `json:"enumerations"`
-	// TypeAliases <TODO>
-	TypeAliases []Type `json:"typeAliases"`
-}
+const (
+	defaultInputFile   = "./testdata/metaModel.json"
+	defaultPackageName = "main"
+	defaultOutputFile  = "test.go"
+)
 
-type Enumeration struct {
-	Name   string  `json:"name"`
-	Type   Type    `json:"type"`
-	Values []Value `json:"values"`
-}
-type Structures struct {
-	Name       string       `json:"name"`
-	Properties []Properties `json:"properties"`
-	Kind       []Option     `json:"kind,omitempty"`
-	Mixins     []Option     `json:"mixins,omitempty"`
-	Extends    []Option     `json:"extends,omitempty"`
-}
+var (
+	packageName    string
+	inputFileName  string
+	outputFileName string
+)
 
-type Request struct {
-	Method              string `json:"method"`
-	TypeName            string `json:"typeName"`
-	Type                Result `json:"type,omitempty"`
-	Result              Result `json:"result,omitempty"`
-	MessageDirection    string `json:"messageDirection"`
-	Params              Option `json:"params,omitempty"` // Notif
-	PartialResult       Result `json:"partialResult,omitempty"`
-	RegistrationOptions Option `json:"registrationOptions,omitempty"`
-	Documentation       string `json:"documentation"`
-}
+func init() {
 
-type Notification struct {
-	Method              string `json:"method"`
-	TypeName            string `json:"typeName,omitempty"`
-	MessageDirection    string `json:"messageDirection"`
-	Params              Option `json:"params,omitempty"`
-	RegistrationMethod  string `json:"registrationMethod,omitempty"`
-	RegistrationOptions Option `json:"registrationOptions,omitempty"`
-	Documentation       string `json:"documentation"`
-	Since               string `json:"since,omitempty"`
-}
+	flag.StringVar(&inputFileName, "f", defaultInputFile, "location for metamodel file")
+	flag.StringVar(&packageName, "p", defaultPackageName, "package name for generated code")
+	flag.StringVar(&outputFileName, "o", defaultOutputFile, "location for output file")
 
-type Result struct {
-	Kind  string    `json:"kind,omitempty"`
-	Name  string    `json:"name,omitempty"`
-	Items []Element `json:"items,omitempty"`
-}
-
-type Element struct {
-	Option
-	Element []Option `json:"items,omitempty"`
-}
-
-type Option struct {
-	Kind string `json:"kind"`
-	Name string `json:"name,omitempty"`
-}
-
-type Properties struct {
-	Name          string `json:"name,omitempty"`
-	Type          Type   `json:"type,omitempty"`
-	Optional      *bool  `json:"optional,omitempty"`
-	Documentation string `json:"documentation,omitempty"`
-}
-
-type Type struct {
-	Name    string      `json:"name,omitempty"`
-	Kind    string      `json:"kind"`
-	Element *Option     `json:"element,omitempty"`
-	Items   []Option    `json:"items,omitempty"`
-	Value   interface{} `json:"value,omitempty"` // Or Element or string ....
-	Since   string      `json:"single,omitempty"`
-}
-
-type Value struct {
-	Name          string      `json:"name"`
-	Value         interface{} `json:"value"`
-	Documentation string      `json:"documentation"`
+	flag.Parse()
+	flag.Usage = usage
 }
 
 func main() {
+	// args := flag.Args()
+
+	// if len(args) < 1 {
+	// 	usage()
+	// 	return
+	// }
+
 	// TOOD: Read in from stdin ..
-	b, err := os.ReadFile("testdata/metaModel.json")
+	b, err := os.ReadFile(inputFileName)
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
 		os.Exit(10)
@@ -116,9 +54,8 @@ func main() {
 		os.Exit(15)
 	}
 
-	// TODO: Specify package.
-	// Create output grammer file
-	file, err := os.OpenFile("test.go", os.O_WRONLY|os.O_CREATE, 0o644)
+	// Create output file
+	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
 		os.Exit(16)
@@ -126,17 +63,29 @@ func main() {
 	defer file.Close()
 
 	fileWriter := bufio.NewWriter(file)
+	defer func() {
+		// Dont forget to flush to file or might lose the info in the buffer
+		err = fileWriter.Flush()
+		if err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+			os.Exit(16)
+		}
+	}()
 
-	// TODO: Specify package
-	fmt.Fprint(fileWriter, "package main\n")
+	h := fmt.Sprintf("package %s\n\n", packageName)
+	fmt.Fprint(fileWriter, h)
 
 	// For each structure..
 	for _, s := range model.Structures {
 
-		// TODO: This is a good spot to use a template instead..
-		start := "type %s struct {\n"
+		//Ignore hidden or unexported structures (starts with _)
+		if strings.HasPrefix(s.Name, "_") {
+			continue
+		}
+		// // TODO: This is a good spot to use a template instead..
+		structure := "type %s struct {\n"
 		end := "}\n"
-		fmt.Fprintf(fileWriter, start, s.Name)
+		fmt.Fprintf(fileWriter, structure, s.Name)
 
 		// TODO: each field
 		for _, p := range s.Properties {
@@ -146,36 +95,39 @@ func main() {
 					fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
 				}
 				n := ConvertType(p.Type.Name)
+				if p.Optional != nil && *p.Optional {
+					n = fmt.Sprintf("*%s", n)
+				}
+				//TODO: Need json tags for unmarshalling to include omitempty
 				fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), n)
 			}
-			/*
-			               if p.Type.Kind == "array" {
-			   				fmt.Fprintf(fileWriter, "\t %s []%s\n", ToTitleCase(p.Name), p.Type.Element.Name)
-			               }
-			*/
+
+			// if p.Type.Kind == "array" {
+			// 	fmt.Fprintf(fileWriter, "\t %s []%s\n", ToTitleCase(p.Name), p.Type.Element.Name)
+			// }
+
 		}
 
 		fmt.Fprint(fileWriter, end)
 	}
-
+	// For each enumeration..
 	for _, e := range model.Enumerations {
 		start := "type %s %s\n"
 		fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name))
 	}
 
+	// For each alias..
 	for _, t := range model.TypeAliases {
-
-        //TODO: Propertly parse type. 
+		// TODO: Propertly parse type.
 		typ := "interface{}"
 
+		//TODO: Fix SelectionRange self reference - meaning add support for optional fields.
+		doc := "// %s %s\n"
 		start := "type %s %s\n"
+
+		dv := strings.ReplaceAll(t.Documentation, "\n", " ")
+		fmt.Fprintf(fileWriter, doc, t.Name, dv)
 		fmt.Fprintf(fileWriter, start, t.Name, typ)
-	}
-	// Dont forget to flush to file or might lose the info in the buffer
-	err = fileWriter.Flush()
-	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
-		os.Exit(16)
 	}
 }
 
@@ -198,6 +150,7 @@ func ConvertType(s string) string {
 	case "DocumentUri":
 		// This is a base type but doesnt have a specific definition associated with it.
 		// using string for now but consider unstable
+		// TODO
 		return "string"
 	}
 
@@ -209,4 +162,16 @@ func ToTitleCase(s string) string {
 		return s
 	}
 	return strings.ToUpper(string(s[0])) + s[1:]
+}
+
+func usage() {
+	// TODO: Replace os.Args[0] with binary name.
+	fmt.Fprintf(os.Stderr, "Usage of lsp-gen:\n")
+	// TODO: Add description here.
+	fmt.Fprintf(os.Stderr, "Command Usage:\n")
+	fmt.Fprintf(os.Stderr, "  generate      Generate LSP Grammar\n")
+	fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "Flag Usage:\n")
+
+	flag.PrintDefaults()
 }
