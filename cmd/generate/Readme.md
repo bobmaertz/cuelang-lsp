@@ -7,7 +7,7 @@ Dec 19: I had an epiphany today - self referential structures can exist if a poi
 
 
 ## TODO: 
-- Cleanup main.go and add tests for existing funcs
+- [x] Cleanup main.go and add tests for existing funcs
 - Add suppport for Notifications
 - Add support for Requests / Responses
 - 

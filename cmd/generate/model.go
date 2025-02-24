@@ -5,19 +5,20 @@ package main
 // Metamodel is the top level specification for LSP.
 type MetaModel struct {
 	// Metadata contains the vrsions information about the document.
-	Metadata struct {
-		Version string `json:"version"`
-	} `json:"metaData"`
+	Metadata Metadata `json:"metaData"`
 	// Requests defined the request parameters
 	Request []Request `json:"requests"`
 	// Structures handle the models
-	Structures []Structures `json:"structures"`
+	Structures []Structure `json:"structures"`
 	// Notifications handle the async notifications from the LSP
 	Notifications []Request `json:"notifications"`
 	// Enumerations <TODO>
 	Enumerations []Enumeration `json:"enumerations"`
 	// TypeAliases <TODO>
 	TypeAliases []Type `json:"typeAliases"`
+}
+type Metadata struct {
+	Version string `json:"version"`
 }
 
 type Enumeration struct {
@@ -37,7 +38,7 @@ type Option struct {
 	Name string `json:"name,omitempty"`
 }
 
-type Structures struct {
+type Structure struct {
 	Name       string       `json:"name"`
 	Properties []Properties `json:"properties"`
 	Kind       []Option     `json:"kind,omitempty"`

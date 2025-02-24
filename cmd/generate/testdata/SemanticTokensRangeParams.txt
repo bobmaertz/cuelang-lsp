@@ -1,0 +1,8 @@
+type SemanticTokensRangeParams struct {
+	WorkDoneProgressParams
+	PartialResultParams
+	// TextDocument The text document.
+	TextDocument TextDocumentIdentifier
+	// Range The range the semantic tokens are requested for.
+	Range Range
+}

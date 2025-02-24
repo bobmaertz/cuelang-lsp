@@ -22,22 +22,22 @@ var (
 )
 
 func init() {
-
 	flag.StringVar(&inputFileName, "f", defaultInputFile, "location for metamodel file")
 	flag.StringVar(&packageName, "p", defaultPackageName, "package name for generated code")
 	flag.StringVar(&outputFileName, "o", defaultOutputFile, "location for output file")
 
-	flag.Parse()
-	flag.Usage = usage
 }
 
 func main() {
-	// args := flag.Args()
+	flag.Parse()
+	flag.Usage = usage
 
-	// if len(args) < 1 {
-	// 	usage()
-	// 	return
-	// }
+	args := flag.Args()
+
+	if len(args) < 1 {
+		usage()
+		return
+	}
 
 	// TOOD: Read in from stdin ..
 	b, err := os.ReadFile(inputFileName)
@@ -54,6 +54,19 @@ func main() {
 		os.Exit(15)
 	}
 
+	switch args[0] {
+	case "generate":
+		generate(model)
+	case "analyze":
+		analyze(model)
+	}
+}
+
+func analyze(model *MetaModel) {
+	// structKeys := map[string]string{}
+}
+
+func generate(model *MetaModel) {
 	// Create output file
 	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
 	if err != nil {
@@ -77,39 +90,14 @@ func main() {
 
 	// For each structure..
 	for _, s := range model.Structures {
-
-		//Ignore hidden or unexported structures (starts with _)
-		if strings.HasPrefix(s.Name, "_") {
+		buf := GenerateStructure(s)
+		if buf == nil {
 			continue
 		}
-		// // TODO: This is a good spot to use a template instead..
-		structure := "type %s struct {\n"
-		end := "}\n"
-		fmt.Fprintf(fileWriter, structure, s.Name)
-
-		// TODO: each field
-		for _, p := range s.Properties {
-			if p.Type.Name != "" {
-				if p.Documentation != "" {
-					doc := strings.ReplaceAll(p.Documentation, "\n", " ")
-					fmt.Fprintf(fileWriter, "\t // %s %s\n", ToTitleCase(p.Name), doc)
-				}
-				n := ConvertType(p.Type.Name)
-				if p.Optional != nil && *p.Optional {
-					n = fmt.Sprintf("*%s", n)
-				}
-				//TODO: Need json tags for unmarshalling to include omitempty
-				fmt.Fprintf(fileWriter, "\t %s %s\n", ToTitleCase(p.Name), n)
-			}
-
-			// if p.Type.Kind == "array" {
-			// 	fmt.Fprintf(fileWriter, "\t %s []%s\n", ToTitleCase(p.Name), p.Type.Element.Name)
-			// }
-
-		}
-
-		fmt.Fprint(fileWriter, end)
+		fileWriter.Write(buf.Bytes())
+		fileWriter.Flush()
 	}
+
 	// For each enumeration..
 	for _, e := range model.Enumerations {
 		start := "type %s %s\n"
@@ -121,7 +109,7 @@ func main() {
 		// TODO: Propertly parse type.
 		typ := "interface{}"
 
-		//TODO: Fix SelectionRange self reference - meaning add support for optional fields.
+		// TODO: Fix SelectionRange self reference - meaning add support for optional fields.
 		doc := "// %s %s\n"
 		start := "type %s %s\n"
 
@@ -129,6 +117,17 @@ func main() {
 		fmt.Fprintf(fileWriter, doc, t.Name, dv)
 		fmt.Fprintf(fileWriter, start, t.Name, typ)
 	}
+
+	// TODO Notificatoins
+	for _, n := model.Notifications {
+		buf = GenerateNotification(n)
+		if buf == nil {
+			continue
+		}
+		fileWriter.Write(buf.Bytes())
+		fileWriter.Flush()
+	}
+	// TODO Requests
 }
 
 func ConvertType(s string) string {
@@ -152,6 +151,8 @@ func ConvertType(s string) string {
 		// using string for now but consider unstable
 		// TODO
 		return "string"
+	case "":
+		return "interface{}"
 	}
 
 	return s
@@ -170,6 +171,8 @@ func usage() {
 	// TODO: Add description here.
 	fmt.Fprintf(os.Stderr, "Command Usage:\n")
 	fmt.Fprintf(os.Stderr, "  generate      Generate LSP Grammar\n")
+	fmt.Fprintf(os.Stderr, "  analyze       Analyze metaModel\n")
+
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "Flag Usage:\n")
 
