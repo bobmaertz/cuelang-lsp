@@ -66,6 +66,10 @@ func analyze(model *MetaModel) {
 	// structKeys := map[string]string{}
 }
 
+
+// generate generates the Go code from the provided MetaModel.
+// It creates a file with the specified package name and writes the 
+// structures, enumerations, type aliases, and notifications to it.
 func generate(model *MetaModel) {
 	// Create output file
 	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
@@ -118,9 +122,8 @@ func generate(model *MetaModel) {
 		fmt.Fprintf(fileWriter, start, t.Name, typ)
 	}
 
-	// TODO Notificatoins
-	for _, n := model.Notifications {
-		buf = GenerateNotification(n)
+	for _, n := range model.Notifications {
+        buf := GenerateNotification(n)
 		if buf == nil {
 			continue
 		}
@@ -158,13 +161,6 @@ func ConvertType(s string) string {
 	return s
 }
 
-func ToTitleCase(s string) string {
-	if s == "" {
-		return s
-	}
-	return strings.ToUpper(string(s[0])) + s[1:]
-}
-
 func usage() {
 	// TODO: Replace os.Args[0] with binary name.
 	fmt.Fprintf(os.Stderr, "Usage of lsp-gen:\n")
@@ -172,9 +168,15 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "Command Usage:\n")
 	fmt.Fprintf(os.Stderr, "  generate      Generate LSP Grammar\n")
 	fmt.Fprintf(os.Stderr, "  analyze       Analyze metaModel\n")
-
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "Flag Usage:\n")
+    fmt.Fprintf(os.Stderr, "  -f string\n")
+    fmt.Fprintf(os.Stderr, "        location for metamodel file (default \"%s\")\n", defaultInputFile)
+    fmt.Fprintf(os.Stderr, "  -o string\n")
+    fmt.Fprintf(os.Stderr, "        location for output file (default \"%s\")\n", defaultOutputFile)
+    fmt.Fprintf(os.Stderr, "  -p string\n")
+    fmt.Fprintf(os.Stderr, "        package name for generated code (default \"%s\")\n", defaultPackageName)
+    fmt.Fprintf(os.Stderr, "\n")
 
 	flag.PrintDefaults()
 }

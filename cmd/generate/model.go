@@ -11,7 +11,7 @@ type MetaModel struct {
 	// Structures handle the models
 	Structures []Structure `json:"structures"`
 	// Notifications handle the async notifications from the LSP
-	Notifications []Request `json:"notifications"`
+	Notifications []Notification `json:"notifications"`
 	// Enumerations <TODO>
 	Enumerations []Enumeration `json:"enumerations"`
 	// TypeAliases <TODO>
