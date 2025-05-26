@@ -8,7 +8,7 @@ linters-settings:
 
 
 linters:
-    disable-all: true
+    disable-all: false
     enable:
         - depguard
         - dogsled
@@ -43,3 +43,4 @@ linters:
         - gocyclo
         - gosec
         - lll
+
