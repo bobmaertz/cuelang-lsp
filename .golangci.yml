@@ -1,0 +1,45 @@
+linters-settings:
+    depguard:
+      rules:
+        deprecated:
+          deny:
+            - pkg: "io/ioutil"
+              desc: "The 'io/ioutil' package is deprecated. Use corresponding 'os' or 'io' functions instead."
+
+
+linters:
+    disable-all: true
+    enable:
+        - depguard
+        - dogsled
+        - exhaustive
+        - gci
+        - gochecknoinits
+        - gocritic
+        - gofmt
+        - gofumpt
+        - goimports
+        - goprintffuncname
+        - gosimple
+        - govet
+        - ineffassign
+        - misspell
+        - nakedret
+        - nolintlint
+        - prealloc
+        - staticcheck
+        - stylecheck
+        - unconvert
+        - unused
+        - whitespace
+        - bodyclose
+        - rowserrcheck
+        - tparallel
+        - unparam
+        - typecheck
+        - dupl
+        - errcheck
+        - goconst
+        - gocyclo
+        - gosec
+        - lll
