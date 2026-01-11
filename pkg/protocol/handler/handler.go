@@ -12,7 +12,7 @@ import (
 	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 )
 
-func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte) {
+func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 	switch method {
 	case "initialize":
 		var request lsp.InitializeRequest
@@ -32,8 +32,8 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 			l.Printf("unable to unmarshal textDocument/didOpen notification: %v\n", err)
 			return
 		}
-		l.Printf("didOpen> %v\n", notification.Params.TextDocument.Uri)
-		// state.OpenDocument(notification.Params.TextDocument.Uri, notification.Params.TextDocument.Text)
+		l.Printf("didOpen> %v\n", notification.Params.TextDocument.URI)
+		// state.OpenDocument(notification.Params.TextDocument.URI, notification.Params.TextDocument.Text)
 	case "textDocument/didChange":
 		var notification lsp.DidChangeNotification
 		if err := json.Unmarshal(contents, &notification); err != nil {
@@ -41,10 +41,10 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 			return
 		}
 
-		l.Printf("didChange> %v\n", notification.Params.TextDocument.Uri)
-		//for _, change := range notification.Params.ContentChanges {
-		//	state.UpdateDocument(notification.Params.TextDocument.Uri, change.Text)
-		//}
+		l.Printf("didChange> %v\n", notification.Params.TextDocument.URI)
+		// for _, change := range notification.Params.ContentChanges {
+		// 	state.UpdateDocument(notification.Params.TextDocument.URI, change.Text)
+		// }
 	case "textDocument/willSave":
 		l.Printf("will Save: %v", string(contents))
 	case "textDocument/didSave":
@@ -57,9 +57,9 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 		}
 
 		// Todo: fix this hacky implementation
-		f := strings.TrimPrefix(request.Params.TextDocument.Uri, "file://")
+		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
 		c, _ := os.ReadFile(f)
-		l.Printf(f)
+		l.Printf("%s", f)
 		update, err := fmtr.Format("", c)
 		if err != nil {
 			l.Printf("error %v", err)
@@ -68,7 +68,7 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 
 		response := FormattingResponse{
 			Response: lsp.Response{
-				Id: request.Id,
+				ID: request.ID,
 			},
 		}
 		t := TextEdit{
@@ -85,7 +85,7 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 			l.Printf("unable to unmarshal textdocument/completion request: %v\n", err)
 			return
 		}
-		response := lsp.NewTextCompletionResponse(request.Id)
+		response := lsp.NewTextCompletionResponse(request.ID)
 		out := rpc.EncodeMessage(response)
 		fmt.Print(out)
 	default:

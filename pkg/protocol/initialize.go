@@ -55,8 +55,8 @@ type InitializeResponse struct {
 func NewInitializeResponse(id int) InitializeResponse {
 	return InitializeResponse{
 		Response: Response{
-			Rpc: rpc.Version,
-			Id:  id,
+			RPC: rpc.Version,
+			ID:  id,
 		},
 		Result: InitializeResult{
 			Capabilities: ServerCapabilities{

@@ -18,16 +18,14 @@ type CompletionContext struct {
 
 type TextCompletionResponse struct {
 	Response
-	//TODO: finish
+	// TODO: finish
 }
 
 func NewTextCompletionResponse(id int) TextCompletionResponse {
-
 	return TextCompletionResponse{
 		Response: Response{
-			Rpc: rpc.Version,
-			Id:  id,
+			RPC: rpc.Version,
+			ID:  id,
 		},
 	}
-
 }

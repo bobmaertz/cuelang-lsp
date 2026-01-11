@@ -38,7 +38,7 @@ func main() {
 
 	// TODO: Remove section in favor of Unix still stdout
 	parts := strings.Split(fname, ".")
-	wErr := os.WriteFile(fmt.Sprintf("%s_fmt.cue", parts[0]), out, os.ModePerm)
+	wErr := os.WriteFile(fmt.Sprintf("%s_fmt.cue", parts[0]), out, 0o600)
 	if wErr != nil {
 		fmt.Fprintf(os.Stderr, "error writing output to file: %v", wErr)
 		os.Exit(13)
