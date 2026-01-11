@@ -49,8 +49,8 @@ lsp ~/out.log
 
 ### Prerequisites
 
-- Go 1.22 or higher
-- CUE 0.10.0 or higher
+- Go 1.24 or higher
+- CUE 0.15.3 or higher
 
 ### Building
 
