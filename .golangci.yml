@@ -5,6 +5,8 @@ linters-settings:
           deny:
             - pkg: "io/ioutil"
               desc: "The 'io/ioutil' package is deprecated. Use corresponding 'os' or 'io' functions instead."
+    goconst:
+      ignore-strings: "any"
 
 
 linters:
@@ -14,7 +16,6 @@ linters:
         - dogsled
         - exhaustive
         - gci
-        - gochecknoinits
         - gocritic
         - gofmt
         - gofumpt

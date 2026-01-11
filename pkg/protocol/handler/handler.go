@@ -12,7 +12,7 @@ import (
 	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 )
 
-func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte) {
+func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 	switch method {
 	case "initialize":
 		var request lsp.InitializeRequest

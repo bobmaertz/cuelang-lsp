@@ -54,7 +54,7 @@ func GenerateStructure(s Structure) *bytes.Buffer {
 
 		// The following code is preparing the "Type" for the field. Arrays
 		// and references are handled special. Default will be interface{}
-		typeName := "any"
+		var typeName string
 		if props.Type.Kind == "array" {
 			refName := ConvertType(props.Type.Element.Name)
 			typeName = fmt.Sprintf("[]%s", refName)

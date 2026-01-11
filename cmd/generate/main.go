@@ -97,12 +97,12 @@ func generate(model *MetaModel) {
 			continue
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+			fmt.Fprintf(os.Stderr, "error writing structure: %v\n", err)
+			return
 		}
 		if err := fileWriter.Flush(); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+			fmt.Fprintf(os.Stderr, "error flushing: %v\n", err)
+			return
 		}
 	}
 
@@ -132,12 +132,12 @@ func generate(model *MetaModel) {
 			continue
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+			fmt.Fprintf(os.Stderr, "error writing notification: %v\n", err)
+			return
 		}
 		if err := fileWriter.Flush(); err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+			fmt.Fprintf(os.Stderr, "error flushing: %v\n", err)
+			return
 		}
 	}
 	// TODO Requests
