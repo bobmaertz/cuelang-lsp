@@ -27,7 +27,9 @@ func captureStdout(f func()) string {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	if _, err := io.Copy(&buf, r); err != nil {
+		panic(err) // Should never fail in tests, but handle it properly
+	}
 	return buf.String()
 }
 

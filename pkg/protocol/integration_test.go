@@ -38,9 +38,6 @@ func TestIntegration_InitializeWorkflow(t *testing.T) {
 		},
 	}
 
-	initJSON, err := json.Marshal(initRequest)
-	require.NoError(t, err)
-
 	initMessage := rpc.EncodeMessage(initRequest)
 
 	// Parse the message back
@@ -59,7 +56,8 @@ func TestIntegration_InitializeWorkflow(t *testing.T) {
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err = io.Copy(&buf, r)
+	require.NoError(t, err)
 	output := buf.String()
 
 	// Verify response
@@ -99,7 +97,7 @@ foo:    "bar"
 			RPC:    "2.0",
 			Method: "textDocument/didOpen",
 		},
-		Params: protocol.DidOpenParams{
+		Params: protocol.DidOpenTextDocumentParams{
 			TextDocument: protocol.TextDocumentItem{
 				URI:        "file://" + testFile,
 				LanguageID: "cue",
@@ -129,7 +127,7 @@ baz:   42
 			RPC:    "2.0",
 			Method: "textDocument/didChange",
 		},
-		Params: protocol.DidChangeParams{
+		Params: protocol.DidChangeTextDocumentParams{
 			TextDocument: protocol.VersionedTextDocumentIdentifier{
 				TextDocumentIdentifier: protocol.TextDocumentIdentifier{
 					URI: "file://" + testFile,
@@ -161,7 +159,7 @@ baz:   42
 			ID:     1,
 			Method: "textDocument/formatting",
 		},
-		Params: protocol.DocumentFormattingParams{
+		Params: protocol.TextFormatParams{
 			TextDocument: protocol.TextDocumentIdentifier{
 				URI: "file://" + testFile,
 			},
@@ -182,7 +180,8 @@ baz:   42
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	io.Copy(&buf, r)
+	_, err = io.Copy(&buf, r)
+	require.NoError(t, err)
 	output := buf.String()
 
 	// Verify formatting response
@@ -221,7 +220,7 @@ func TestIntegration_MessageEncoding(t *testing.T) {
 					RPC:    "2.0",
 					Method: "textDocument/didOpen",
 				},
-				Params: protocol.DidOpenParams{
+				Params: protocol.DidOpenTextDocumentParams{
 					TextDocument: protocol.TextDocumentItem{
 						URI:        "file:///test.cue",
 						LanguageID: "cue",
@@ -240,7 +239,7 @@ func TestIntegration_MessageEncoding(t *testing.T) {
 					ID:     2,
 					Method: "textDocument/completion",
 				},
-				Params: protocol.CompletionParams{
+				Params: protocol.TextCompletionParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: "file:///test.cue",
 					},
@@ -418,7 +417,7 @@ func TestIntegration_FormattingWithExamples(t *testing.T) {
 					ID:     1,
 					Method: "textDocument/formatting",
 				},
-				Params: protocol.DocumentFormattingParams{
+				Params: protocol.TextFormatParams{
 					TextDocument: protocol.TextDocumentIdentifier{
 						URI: "file://" + absPath,
 					},

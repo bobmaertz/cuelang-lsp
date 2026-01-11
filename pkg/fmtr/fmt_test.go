@@ -220,8 +220,12 @@ value: 42
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
 		if strings.Contains(line, "level1:") {
-			// Should have 4 spaces indentation
-			assert.True(t, strings.HasPrefix(line, "    ") || strings.HasPrefix(line, "\t"))
+			// Should have exactly 4 spaces indentation
+			assert.True(t, strings.HasPrefix(line, "    "), "level1 should be indented with 4 spaces")
+		}
+		if strings.Contains(line, "level2:") {
+			// Should have exactly 8 spaces indentation
+			assert.True(t, strings.HasPrefix(line, "        "), "level2 should be indented with 8 spaces")
 		}
 	}
 }

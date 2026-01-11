@@ -8,7 +8,9 @@ type TextCompletionRequest struct {
 }
 
 type TextCompletionParams struct {
-	Context CompletionContext `json:"context"`
+	TextDocument TextDocumentIdentifier `json:"textDocument"`
+	Position     Position               `json:"position"`
+	Context      CompletionContext      `json:"context,omitempty"`
 }
 
 type CompletionContext struct {
