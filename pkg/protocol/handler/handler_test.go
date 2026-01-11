@@ -105,7 +105,7 @@ func TestHandleMessage_DidOpen(t *testing.T) {
 			RPC:    "2.0",
 			Method: "textDocument/didOpen",
 		},
-		Params: lsp.DidOpenParams{
+		Params: lsp.DidOpenTextDocumentParams{
 			TextDocument: lsp.TextDocumentItem{
 				URI:        "file:///test.cue",
 				LanguageID: "cue",
@@ -146,7 +146,7 @@ func TestHandleMessage_DidChange(t *testing.T) {
 			RPC:    "2.0",
 			Method: "textDocument/didChange",
 		},
-		Params: lsp.DidChangeParams{
+		Params: lsp.DidChangeTextDocumentParams{
 			TextDocument: lsp.VersionedTextDocumentIdentifier{
 				TextDocumentIdentifier: lsp.TextDocumentIdentifier{
 					URI: "file:///test.cue",
@@ -228,7 +228,7 @@ baz:   42
 			ID:     1,
 			Method: "textDocument/formatting",
 		},
-		Params: lsp.DocumentFormattingParams{
+		Params: lsp.TextFormatParams{
 			TextDocument: lsp.TextDocumentIdentifier{
 				URI: "file://" + testFile,
 			},
@@ -280,7 +280,7 @@ func TestHandleMessage_Formatting_InvalidFile(t *testing.T) {
 			ID:     1,
 			Method: "textDocument/formatting",
 		},
-		Params: lsp.DocumentFormattingParams{
+		Params: lsp.TextFormatParams{
 			TextDocument: lsp.TextDocumentIdentifier{
 				URI: "file:///nonexistent/file.cue",
 			},
@@ -307,7 +307,7 @@ func TestHandleMessage_Completion(t *testing.T) {
 			ID:     1,
 			Method: "textDocument/completion",
 		},
-		Params: lsp.CompletionParams{
+		Params: lsp.TextCompletionParams{
 			TextDocument: lsp.TextDocumentIdentifier{
 				URI: "file:///test.cue",
 			},
