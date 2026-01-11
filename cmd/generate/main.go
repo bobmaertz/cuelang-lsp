@@ -25,7 +25,6 @@ func init() {
 	flag.StringVar(&inputFileName, "f", defaultInputFile, "location for metamodel file")
 	flag.StringVar(&packageName, "p", defaultPackageName, "package name for generated code")
 	flag.StringVar(&outputFileName, "o", defaultOutputFile, "location for output file")
-
 }
 
 func main() {
@@ -39,7 +38,7 @@ func main() {
 		return
 	}
 
-	// TOOD: Read in from stdin ..
+	// TODO: Read in from stdin ..
 	b, err := os.ReadFile(inputFileName)
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
@@ -66,9 +65,8 @@ func analyze(model *MetaModel) {
 	// structKeys := map[string]string{}
 }
 
-
 // generate generates the Go code from the provided MetaModel.
-// It creates a file with the specified package name and writes the 
+// It creates a file with the specified package name and writes the
 // structures, enumerations, type aliases, and notifications to it.
 func generate(model *MetaModel) {
 	// Create output file
@@ -98,8 +96,14 @@ func generate(model *MetaModel) {
 		if buf == nil {
 			continue
 		}
-		fileWriter.Write(buf.Bytes())
-		fileWriter.Flush()
+		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+			os.Exit(16)
+		}
+		if err := fileWriter.Flush(); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+			os.Exit(16)
+		}
 	}
 
 	// For each enumeration..
@@ -110,8 +114,8 @@ func generate(model *MetaModel) {
 
 	// For each alias..
 	for _, t := range model.TypeAliases {
-		// TODO: Propertly parse type.
-		typ := "interface{}"
+		// TODO: Properly parse type.
+		typ := "any"
 
 		// TODO: Fix SelectionRange self reference - meaning add support for optional fields.
 		doc := "// %s %s\n"
@@ -123,12 +127,18 @@ func generate(model *MetaModel) {
 	}
 
 	for _, n := range model.Notifications {
-        buf := GenerateNotification(n)
+		buf := GenerateNotification(n)
 		if buf == nil {
 			continue
 		}
-		fileWriter.Write(buf.Bytes())
-		fileWriter.Flush()
+		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+			os.Exit(16)
+		}
+		if err := fileWriter.Flush(); err != nil {
+			os.Stderr.Write([]byte(err.Error()))
+			os.Exit(16)
+		}
 	}
 	// TODO Requests
 }
@@ -144,7 +154,7 @@ func ConvertType(s string) string {
 	case "decimal":
 		return "float64"
 	case "LSPAny":
-		return "interface{}"
+		return "any"
 	case "URI":
 		// This is a base type but doesnt have a specific definition associated with it.
 		// using string for now but consider unstable
@@ -155,7 +165,7 @@ func ConvertType(s string) string {
 		// TODO
 		return "string"
 	case "":
-		return "interface{}"
+		return "any"
 	}
 
 	return s
@@ -170,13 +180,13 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  analyze       Analyze metaModel\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "Flag Usage:\n")
-    fmt.Fprintf(os.Stderr, "  -f string\n")
-    fmt.Fprintf(os.Stderr, "        location for metamodel file (default \"%s\")\n", defaultInputFile)
-    fmt.Fprintf(os.Stderr, "  -o string\n")
-    fmt.Fprintf(os.Stderr, "        location for output file (default \"%s\")\n", defaultOutputFile)
-    fmt.Fprintf(os.Stderr, "  -p string\n")
-    fmt.Fprintf(os.Stderr, "        package name for generated code (default \"%s\")\n", defaultPackageName)
-    fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  -f string\n")
+	fmt.Fprintf(os.Stderr, "        location for metamodel file (default \"%s\")\n", defaultInputFile)
+	fmt.Fprintf(os.Stderr, "  -o string\n")
+	fmt.Fprintf(os.Stderr, "        location for output file (default \"%s\")\n", defaultOutputFile)
+	fmt.Fprintf(os.Stderr, "  -p string\n")
+	fmt.Fprintf(os.Stderr, "        package name for generated code (default \"%s\")\n", defaultPackageName)
+	fmt.Fprintf(os.Stderr, "\n")
 
 	flag.PrintDefaults()
 }

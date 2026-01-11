@@ -1,7 +1,7 @@
 package protocol
 
 type TextDocumentIdentifier struct {
-	Uri string `json:"uri"`
+	URI string `json:"uri"`
 }
 
 type VersionedTextDocumentIdentifier struct {
@@ -10,8 +10,8 @@ type VersionedTextDocumentIdentifier struct {
 }
 
 type TextDocumentItem struct {
-	Uri        string `json:"uri"`
-	LanguageId string `json:"languageId"`
+	URI        string `json:"uri"`
+	LanguageID string `json:"languageId"`
 	Version    int    `json:"version"`
 	Text       string `json:"text"`
 }
