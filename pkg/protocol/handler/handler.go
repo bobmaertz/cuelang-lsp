@@ -58,11 +58,15 @@ func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 
 		// Todo: fix this hacky implementation
 		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
-		c, _ := os.ReadFile(f)
+		c, err := os.ReadFile(f)
+		if err != nil {
+			l.Printf("error reading file %s: %v", f, err)
+			return
+		}
 		l.Printf("%s", f)
 		update, err := fmtr.Format("", c)
 		if err != nil {
-			l.Printf("error %v", err)
+			l.Printf("error formatting %s: %v", f, err)
 			return
 		}
 
