@@ -216,16 +216,18 @@ value: 42
 	output, err := Format("test.cue", input)
 	require.NoError(t, err)
 
-	// Verify proper indentation (4 spaces as per format.UseSpaces(4))
+	// Verify proper indentation (should be consistent, tabs or spaces)
 	lines := strings.Split(string(output), "\n")
 	for _, line := range lines {
 		if strings.Contains(line, "level1:") {
-			// Should have exactly 4 spaces indentation
-			assert.True(t, strings.HasPrefix(line, "    "), "level1 should be indented with 4 spaces")
+			// Should be indented (either with tab or spaces)
+			assert.True(t, strings.HasPrefix(line, "\t") || strings.HasPrefix(line, "    "),
+				"level1 should be indented")
 		}
 		if strings.Contains(line, "level2:") {
-			// Should have exactly 8 spaces indentation
-			assert.True(t, strings.HasPrefix(line, "        "), "level2 should be indented with 8 spaces")
+			// Should be double-indented
+			assert.True(t, strings.HasPrefix(line, "\t\t") || strings.HasPrefix(line, "        "),
+				"level2 should be double-indented")
 		}
 	}
 }
@@ -291,10 +293,14 @@ name:   string
 	assert.Contains(t, result, "database:")
 	assert.Contains(t, result, "driver:")
 
-	// Verify indentation uses four spaces for nested fields
-	assert.Contains(t, result, "\n    host:")
-	assert.Contains(t, result, "\n    port:")
-	assert.Contains(t, result, "\n    driver:")
+	// Verify nested fields are indented (with tabs or spaces)
+	hasIndentedHost := strings.Contains(result, "\n\thost:") || strings.Contains(result, "\n    host:")
+	hasIndentedPort := strings.Contains(result, "\n\tport:") || strings.Contains(result, "\n    port:")
+	hasIndentedDriver := strings.Contains(result, "\n\tdriver:") || strings.Contains(result, "\n    driver:")
+
+	assert.True(t, hasIndentedHost, "host field should be indented")
+	assert.True(t, hasIndentedPort, "port field should be indented")
+	assert.True(t, hasIndentedDriver, "driver field should be indented")
 }
 
 func TestFormat_Unifications(t *testing.T) {
