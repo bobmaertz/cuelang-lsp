@@ -18,7 +18,10 @@ import (
 // captureStdout captures stdout during function execution
 func captureStdout(f func()) string {
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, err := os.Pipe()
+	if err != nil {
+		panic(err)
+	}
 	os.Stdout = w
 
 	f()

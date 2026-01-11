@@ -291,9 +291,10 @@ name:   string
 	assert.Contains(t, result, "database:")
 	assert.Contains(t, result, "driver:")
 
-	// Should not contain excessive whitespace
-	assert.NotContains(t, result, "  host:")
-	assert.NotContains(t, result, "   port:")
+	// Verify indentation uses four spaces for nested fields
+	assert.Contains(t, result, "\n    host:")
+	assert.Contains(t, result, "\n    port:")
+	assert.Contains(t, result, "\n    driver:")
 }
 
 func TestFormat_Unifications(t *testing.T) {

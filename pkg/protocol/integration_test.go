@@ -47,7 +47,8 @@ func TestIntegration_InitializeWorkflow(t *testing.T) {
 
 	// Capture stdout for response
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, pipeErr := os.Pipe()
+	require.NoError(t, pipeErr)
 	os.Stdout = w
 
 	handler.HandleMessage(logger, nil, method, contents)
@@ -171,7 +172,8 @@ baz:   42
 
 	// Capture stdout
 	old := os.Stdout
-	r, w, _ := os.Pipe()
+	r, w, pipeErr := os.Pipe()
+	require.NoError(t, pipeErr)
 	os.Stdout = w
 
 	handler.HandleMessage(logger, nil, "textDocument/formatting", formatJSON)
