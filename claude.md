@@ -194,11 +194,11 @@ GitHub Actions runs on every push/PR:
 - ✅ LSP initialization
 - ✅ Document open/change notifications
 - ✅ Document formatting
+- ✅ Go to definition (jump to field/type definitions)
 
 **Not Working (Stubbed):**
 - ❌ Code completion (empty response)
 - ❌ Hover provider (declared but not implemented)
-- ❌ Go to definition (declared but not implemented)
 - ❌ Diagnostics (no error checking)
 
 **Known Issues:**

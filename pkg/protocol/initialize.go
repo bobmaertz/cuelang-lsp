@@ -62,6 +62,7 @@ func NewInitializeResponse(id int) InitializeResponse {
 			Capabilities: ServerCapabilities{
 				TextDocumentSync:           1,
 				DocumentFormattingProvider: true,
+				DefinitionProvider:         true,
 			},
 			ServerInfo: ServerInfo{
 				Name:    "cuelang-lsp",
