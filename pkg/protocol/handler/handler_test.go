@@ -412,7 +412,6 @@ myServer: server
 	// The definition should be on line 2 (0-based) where "server:" is defined
 	assert.Equal(t, 2, response.Result[0].Range.Start.Line)
 }
-}
 
 func TestHandleMessage_Definition_InvalidFile(t *testing.T) {
 	var logBuf bytes.Buffer

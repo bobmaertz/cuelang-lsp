@@ -43,23 +43,11 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 
 	// Helper to convert token.Pos to line/column
 	posToLineCol := func(p token.Pos) (int, int) {
-		// token.Pos is an offset, we need to walk through content to find line/col
-		offset := int(p)
-		if offset > len(content) {
-			offset = len(content)
+		// Use the CUE token.Pos methods to get line and column
+		if !p.IsValid() {
+			return 0, 0
 		}
-
-		line := 1
-		col := 1
-		for i := 0; i < offset && i < len(content); i++ {
-			if content[i] == '\n' {
-				line++
-				col = 1
-			} else {
-				col++
-			}
-		}
-		return line, col
+		return p.Line(), p.Column()
 	}
 
 	// Walk the AST to find the identifier at the target position
@@ -199,6 +187,8 @@ func offsetToPosition(content []byte, offset int) (int, int) {
 
 // debugPos formats a position for debugging
 func debugPos(content []byte, pos token.Pos) string {
-	line, col := offsetToPosition(content, int(pos))
-	return fmt.Sprintf("line %d, col %d (offset %d)", line+1, col+1, pos)
+	if !pos.IsValid() {
+		return "invalid position"
+	}
+	return fmt.Sprintf("line %d, col %d (offset %d)", pos.Line(), pos.Column(), pos.Offset())
 }
