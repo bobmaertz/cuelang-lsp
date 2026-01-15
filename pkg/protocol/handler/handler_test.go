@@ -350,6 +350,117 @@ func TestHandleMessage_Completion_InvalidJSON(t *testing.T) {
 	assert.Contains(t, logOutput, "unable to unmarshal textdocument/completion request")
 }
 
+func TestHandleMessage_Definition(t *testing.T) {
+	var logBuf bytes.Buffer
+	logger := log.New(&logBuf, "", 0)
+
+	// Create a temporary CUE file with a field definition
+	tmpDir := t.TempDir()
+	testFile := filepath.Join(tmpDir, "test.cue")
+	cueContent := `package test
+
+server: {
+	host: "localhost"
+	port: 8080
+}
+
+myServer: server
+`
+	err := os.WriteFile(testFile, []byte(cueContent), 0644)
+	require.NoError(t, err)
+
+	// Request definition for "server" on line 7 (where myServer references it)
+	request := lsp.DefinitionRequest{
+		Request: lsp.Request{
+			RPC:    "2.0",
+			ID:     1,
+			Method: "textDocument/definition",
+		},
+		Params: lsp.DefinitionParams{
+			TextDocument: lsp.TextDocumentIdentifier{
+				URI: "file://" + testFile,
+			},
+			Position: lsp.Position{
+				Line:      7,
+				Character: 11, // Position on "server" in "myServer: server"
+			},
+		},
+	}
+
+	contents, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	output := captureStdout(func() {
+		HandleMessage(logger, nil, "textDocument/definition", contents)
+	})
+
+	// Verify response contains definition location
+	assert.Contains(t, output, "Content-Length:")
+
+	// Parse response
+	parts := strings.Split(output, "\r\n\r\n")
+	require.GreaterOrEqual(t, len(parts), 2, "Response should have header and body")
+
+	var response lsp.DefinitionResponse
+	err = json.Unmarshal([]byte(parts[1]), &response)
+	require.NoError(t, err)
+	assert.Equal(t, 1, response.ID)
+
+	// Should have found exactly one location (the definition of "server")
+	require.Len(t, response.Result, 1, "Should find exactly one definition")
+	assert.Equal(t, "file://"+testFile, response.Result[0].URI)
+	// The definition should be on line 2 (0-based) where "server:" is defined
+	assert.Equal(t, 2, response.Result[0].Range.Start.Line)
+}
+
+func TestHandleMessage_Definition_InvalidFile(t *testing.T) {
+	var logBuf bytes.Buffer
+	logger := log.New(&logBuf, "", 0)
+
+	request := lsp.DefinitionRequest{
+		Request: lsp.Request{
+			RPC:    "2.0",
+			ID:     1,
+			Method: "textDocument/definition",
+		},
+		Params: lsp.DefinitionParams{
+			TextDocument: lsp.TextDocumentIdentifier{
+				URI: "file:///nonexistent/file.cue",
+			},
+			Position: lsp.Position{
+				Line:      0,
+				Character: 0,
+			},
+		},
+	}
+
+	contents, err := json.Marshal(request)
+	require.NoError(t, err)
+
+	output := captureStdout(func() {
+		HandleMessage(logger, nil, "textDocument/definition", contents)
+	})
+
+	// Should return empty result
+	assert.Contains(t, output, "Content-Length:")
+
+	// Check for error in log
+	logOutput := logBuf.String()
+	assert.Contains(t, logOutput, "error reading file")
+}
+
+func TestHandleMessage_Definition_InvalidJSON(t *testing.T) {
+	var logBuf bytes.Buffer
+	logger := log.New(&logBuf, "", 0)
+
+	invalidJSON := []byte(`{"invalid json}`)
+
+	HandleMessage(logger, nil, "textDocument/definition", invalidJSON)
+
+	logOutput := logBuf.String()
+	assert.Contains(t, logOutput, "unable to unmarshal textDocument/definition request")
+}
+
 func TestHandleMessage_UnknownMethod(t *testing.T) {
 	var logBuf bytes.Buffer
 	logger := log.New(&logBuf, "", 0)

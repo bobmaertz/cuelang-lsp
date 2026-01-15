@@ -22,7 +22,9 @@ A Language Server Protocol implementation for the CUE language.
 
 ## Features
 
-- Full cuelang file formatting in your IDE
+- **Document Formatting** - Format CUE files with proper indentation and spacing
+- **Go to Definition** - Jump to field and type definitions within your CUE files
+- **Document Synchronization** - Real-time updates as you edit
 
 ## Installation
 
