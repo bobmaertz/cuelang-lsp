@@ -84,17 +84,19 @@ config: {
 db: config.database
 `)
 
-	// Request definition for "database" in "config.database"
+	// Request definition for "config" in "db: config.database"
 	pos := Position{
 		Line:      9,
-		Character: 12, // Position on "database"
+		Character: 5, // Position on "config"
 	}
 
 	locations, err := FindDefinition("test.cue", content, pos)
 	require.NoError(t, err)
 
-	// Should find the definition
-	assert.GreaterOrEqual(t, len(locations), 0)
+	// Should find the definition of "config" on line 2
+	require.Len(t, locations, 1, "Should find definition of config")
+	assert.Equal(t, "test.cue", locations[0].URI)
+	assert.Equal(t, 2, locations[0].Range.Start.Line)
 }
 
 func TestFindDefinition_DefinitionSchema(t *testing.T) {
@@ -120,11 +122,10 @@ user1: #User & {
 	locations, err := FindDefinition("test.cue", content, pos)
 	require.NoError(t, err)
 
-	// Should find the definition of #User
-	assert.GreaterOrEqual(t, len(locations), 0)
-	if len(locations) > 0 {
-		assert.Equal(t, "test.cue", locations[0].URI)
-	}
+	// Should find the definition of #User on line 2
+	require.Len(t, locations, 1, "Should find definition of #User")
+	assert.Equal(t, "test.cue", locations[0].URI)
+	assert.Equal(t, 2, locations[0].Range.Start.Line)
 }
 
 func TestFindDefinition_SelfReference(t *testing.T) {
@@ -144,6 +145,6 @@ value: {
 	locations, err := FindDefinition("test.cue", content, pos)
 	require.NoError(t, err)
 
-	// Should return empty or the same location (not jump to itself)
-	assert.GreaterOrEqual(t, len(locations), 0)
+	// Should return empty (not jump to itself when already on the definition)
+	assert.Len(t, locations, 0, "Should not return a location when already on the definition")
 }

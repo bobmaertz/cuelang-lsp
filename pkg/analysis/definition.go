@@ -1,6 +1,8 @@
 package analysis
 
 import (
+	"fmt"
+
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/parser"
 	"cuelang.org/go/cue/token"
@@ -32,13 +34,33 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 		return nil, err
 	}
 
-	// Convert LSP position (0-based) to token.Pos
-	// Note: CUE uses 1-based line numbers
-	targetLine := pos.Line + 1
-	targetChar := pos.Character
+	// Convert LSP position (0-based) to token position for searching
+	targetLine := pos.Line + 1    // CUE uses 1-based line numbers
+	targetChar := pos.Character + 1 // CUE uses 1-based columns
 
 	var foundIdent *ast.Ident
 	var foundPos token.Pos
+
+	// Helper to convert token.Pos to line/column
+	posToLineCol := func(p token.Pos) (int, int) {
+		// token.Pos is an offset, we need to walk through content to find line/col
+		offset := int(p)
+		if offset > len(content) {
+			offset = len(content)
+		}
+
+		line := 1
+		col := 1
+		for i := 0; i < offset && i < len(content); i++ {
+			if content[i] == '\n' {
+				line++
+				col = 1
+			} else {
+				col++
+			}
+		}
+		return line, col
+	}
 
 	// Walk the AST to find the identifier at the target position
 	ast.Walk(file, func(node ast.Node) bool {
@@ -46,22 +68,20 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 			return false
 		}
 
-		nodePos := file.Pos(node.Pos(), token.NoRelPos)
-		nodeEnd := file.Pos(node.End(), token.NoRelPos)
+		// Only look at identifiers
+		ident, ok := node.(*ast.Ident)
+		if !ok {
+			return true
+		}
 
-		// Check if this node contains our target position
-		if nodePos.Line() == targetLine {
-			// Check if the character position is within this node
-			if ident, ok := node.(*ast.Ident); ok {
-				// Check if cursor is on this identifier
-				startCol := nodePos.Column() - 1 // Convert to 0-based
-				endCol := startCol + len(ident.Name)
+		// Get position of this identifier
+		line, col := posToLineCol(ident.Pos())
 
-				if targetChar >= startCol && targetChar < endCol {
-					foundIdent = ident
-					foundPos = node.Pos()
-				}
-			}
+		// Check if cursor is on this identifier
+		if line == targetLine && col <= targetChar && targetChar < col+len(ident.Name) {
+			foundIdent = ident
+			foundPos = ident.Pos()
+			return false // Stop walking
 		}
 
 		return true
@@ -88,17 +108,17 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 			if label, ok := field.Label.(*ast.Ident); ok {
 				if label.Name == identName && label.Pos() != foundPos {
 					// Found a definition
-					labelPos := file.Pos(label.Pos(), token.NoRelPos)
+					line, col := posToLineCol(label.Pos())
 					defLocation = &Location{
 						URI: uri,
 						Range: Range{
 							Start: Position{
-								Line:      labelPos.Line() - 1, // Convert to 0-based
-								Character: labelPos.Column() - 1,
+								Line:      line - 1,      // Convert to 0-based
+								Character: col - 1,       // Convert to 0-based
 							},
 							End: Position{
-								Line:      labelPos.Line() - 1,
-								Character: labelPos.Column() - 1 + len(label.Name),
+								Line:      line - 1,
+								Character: col - 1 + len(label.Name),
 							},
 						},
 					}
@@ -110,17 +130,17 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 		// Look for alias definitions
 		if alias, ok := node.(*ast.Alias); ok {
 			if alias.Ident.Name == identName && alias.Ident.Pos() != foundPos {
-				aliasPos := file.Pos(alias.Ident.Pos(), token.NoRelPos)
+				line, col := posToLineCol(alias.Ident.Pos())
 				defLocation = &Location{
 					URI: uri,
 					Range: Range{
 						Start: Position{
-							Line:      aliasPos.Line() - 1,
-							Character: aliasPos.Column() - 1,
+							Line:      line - 1,
+							Character: col - 1,
 						},
 						End: Position{
-							Line:      aliasPos.Line() - 1,
-							Character: aliasPos.Column() - 1 + len(alias.Ident.Name),
+							Line:      line - 1,
+							Character: col - 1 + len(alias.Ident.Name),
 						},
 					},
 				}
@@ -137,4 +157,48 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 
 	// No definition found
 	return []Location{}, nil
+}
+
+// positionToOffset converts a 0-based line/char position to byte offset
+func positionToOffset(content []byte, line, char int) int {
+	currentLine := 0
+	currentCol := 0
+
+	for i, b := range content {
+		if currentLine == line && currentCol == char {
+			return i
+		}
+		if b == '\n' {
+			currentLine++
+			currentCol = 0
+		} else {
+			currentCol++
+		}
+	}
+	return len(content)
+}
+
+// offsetToPosition converts a byte offset to 0-based line/char position
+func offsetToPosition(content []byte, offset int) (int, int) {
+	if offset > len(content) {
+		offset = len(content)
+	}
+
+	line := 0
+	col := 0
+	for i := 0; i < offset && i < len(content); i++ {
+		if content[i] == '\n' {
+			line++
+			col = 0
+		} else {
+			col++
+		}
+	}
+	return line, col
+}
+
+// debugPos formats a position for debugging
+func debugPos(content []byte, pos token.Pos) string {
+	line, col := offsetToPosition(content, int(pos))
+	return fmt.Sprintf("line %d, col %d (offset %d)", line+1, col+1, pos)
 }

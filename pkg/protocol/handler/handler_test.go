@@ -399,14 +399,19 @@ myServer: server
 
 	// Parse response
 	parts := strings.Split(output, "\r\n\r\n")
-	if len(parts) >= 2 {
-		var response lsp.DefinitionResponse
-		err = json.Unmarshal([]byte(parts[1]), &response)
-		require.NoError(t, err)
-		assert.Equal(t, 1, response.ID)
-		// Should have found at least one location
-		assert.GreaterOrEqual(t, len(response.Result), 0)
-	}
+	require.GreaterOrEqual(t, len(parts), 2, "Response should have header and body")
+
+	var response lsp.DefinitionResponse
+	err = json.Unmarshal([]byte(parts[1]), &response)
+	require.NoError(t, err)
+	assert.Equal(t, 1, response.ID)
+
+	// Should have found exactly one location (the definition of "server")
+	require.Len(t, response.Result, 1, "Should find exactly one definition")
+	assert.Equal(t, "file://"+testFile, response.Result[0].URI)
+	// The definition should be on line 2 (0-based) where "server:" is defined
+	assert.Equal(t, 2, response.Result[0].Range.Start.Line)
+}
 }
 
 func TestHandleMessage_Definition_InvalidFile(t *testing.T) {
