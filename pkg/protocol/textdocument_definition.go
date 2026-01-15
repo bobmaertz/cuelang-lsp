@@ -23,7 +23,7 @@ type Location struct {
 func NewDefinitionResponse(id int, locations []Location) DefinitionResponse {
 	return DefinitionResponse{
 		Response: Response{
-			RPC: "2.0",
+			RPC: rpc.Version,
 			ID:  id,
 		},
 		Result: locations,
