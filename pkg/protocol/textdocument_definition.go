@@ -1,5 +1,9 @@
 package protocol
 
+import (
+	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
+)
+
 type DefinitionRequest struct {
 	Request
 	Params DefinitionParams `json:"params"`
