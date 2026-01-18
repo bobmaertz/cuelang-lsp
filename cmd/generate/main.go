@@ -1,3 +1,11 @@
+// Command generate is a small code generator that turns the VS Code LSP metamodel
+// (metaModel.json) into Go type definitions.
+//
+// Usage:
+//
+//	go run ./cmd/generate generate -f <metamodel.json> -o <output.go> -p <package>
+//
+// The generated output is plain Go code written to `-o`.
 package main
 
 import (
@@ -21,16 +29,13 @@ var (
 	outputFileName string
 )
 
-func init() {
+func main() {
 	flag.StringVar(&inputFileName, "f", defaultInputFile, "location for metamodel file")
 	flag.StringVar(&packageName, "p", defaultPackageName, "package name for generated code")
 	flag.StringVar(&outputFileName, "o", defaultOutputFile, "location for output file")
 
-}
-
-func main() {
-	flag.Parse()
 	flag.Usage = usage
+	flag.Parse()
 
 	args := flag.Args()
 
@@ -39,7 +44,7 @@ func main() {
 		return
 	}
 
-	// TOOD: Read in from stdin ..
+	// TODO: Read in from stdin ..
 	b, err := os.ReadFile(inputFileName)
 	if err != nil {
 		os.Stderr.Write([]byte(err.Error()))
@@ -66,73 +71,90 @@ func analyze(model *MetaModel) {
 	// structKeys := map[string]string{}
 }
 
-
 // generate generates the Go code from the provided MetaModel.
-// It creates a file with the specified package name and writes the 
+// It creates a file with the specified package name and writes the
 // structures, enumerations, type aliases, and notifications to it.
 func generate(model *MetaModel) {
-	// Create output file
-	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
-	if err != nil {
+	if err := generateToFile(model); err != nil {
 		os.Stderr.Write([]byte(err.Error()))
 		os.Exit(16)
 	}
-	defer file.Close()
+}
+
+func generateToFile(model *MetaModel) (err error) {
+	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeErr := file.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	fileWriter := bufio.NewWriter(file)
 	defer func() {
-		// Dont forget to flush to file or might lose the info in the buffer
-		err = fileWriter.Flush()
-		if err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+		flushErr := fileWriter.Flush()
+		if err == nil {
+			err = flushErr
 		}
 	}()
 
 	h := fmt.Sprintf("package %s\n\n", packageName)
-	fmt.Fprint(fileWriter, h)
+	if _, err := fmt.Fprint(fileWriter, h); err != nil {
+		return err
+	}
 
-	// For each structure..
 	for _, s := range model.Structures {
 		buf := GenerateStructure(s)
 		if buf == nil {
 			continue
 		}
-		fileWriter.Write(buf.Bytes())
-		fileWriter.Flush()
+		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			return err
+		}
 	}
 
-	// For each enumeration..
 	for _, e := range model.Enumerations {
 		start := "type %s %s\n"
-		fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name))
+		if _, err := fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name)); err != nil {
+			return err
+		}
 	}
 
-	// For each alias..
 	for _, t := range model.TypeAliases {
-		// TODO: Propertly parse type.
-		typ := "interface{}"
+		// TODO: parse type correctly
+		const typ = "interface{}"
 
 		// TODO: Fix SelectionRange self reference - meaning add support for optional fields.
 		doc := "// %s %s\n"
 		start := "type %s %s\n"
 
 		dv := strings.ReplaceAll(t.Documentation, "\n", " ")
-		fmt.Fprintf(fileWriter, doc, t.Name, dv)
-		fmt.Fprintf(fileWriter, start, t.Name, typ)
+		if _, err := fmt.Fprintf(fileWriter, doc, t.Name, dv); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(fileWriter, start, t.Name, typ); err != nil {
+			return err
+		}
 	}
 
 	for _, n := range model.Notifications {
-        buf := GenerateNotification(n)
+		buf := GenerateNotification(n)
 		if buf == nil {
 			continue
 		}
-		fileWriter.Write(buf.Bytes())
-		fileWriter.Flush()
+		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			return err
+		}
 	}
-	// TODO Requests
+
+	return nil
 }
 
+// ConvertType maps metamodel base types to Go types.
+// Unknown types are returned as-is.
 func ConvertType(s string) string {
 	switch s {
 	case "boolean":
@@ -170,13 +192,13 @@ func usage() {
 	fmt.Fprintf(os.Stderr, "  analyze       Analyze metaModel\n")
 	fmt.Fprintf(os.Stderr, "\n")
 	fmt.Fprintf(os.Stderr, "Flag Usage:\n")
-    fmt.Fprintf(os.Stderr, "  -f string\n")
-    fmt.Fprintf(os.Stderr, "        location for metamodel file (default \"%s\")\n", defaultInputFile)
-    fmt.Fprintf(os.Stderr, "  -o string\n")
-    fmt.Fprintf(os.Stderr, "        location for output file (default \"%s\")\n", defaultOutputFile)
-    fmt.Fprintf(os.Stderr, "  -p string\n")
-    fmt.Fprintf(os.Stderr, "        package name for generated code (default \"%s\")\n", defaultPackageName)
-    fmt.Fprintf(os.Stderr, "\n")
+	fmt.Fprintf(os.Stderr, "  -f string\n")
+	fmt.Fprintf(os.Stderr, "        location for metamodel file (default \"%s\")\n", defaultInputFile)
+	fmt.Fprintf(os.Stderr, "  -o string\n")
+	fmt.Fprintf(os.Stderr, "        location for output file (default \"%s\")\n", defaultOutputFile)
+	fmt.Fprintf(os.Stderr, "  -p string\n")
+	fmt.Fprintf(os.Stderr, "        package name for generated code (default \"%s\")\n", defaultPackageName)
+	fmt.Fprintf(os.Stderr, "\n")
 
 	flag.PrintDefaults()
 }

@@ -1,15 +1,15 @@
 package protocol
 
-/* LSP defines the interation and types of the LSP protocol.*/
+// LSP defines the interaction and types of the LSP protocol.
 type Request struct {
-	Rpc    string `json:"jsonrpc"`
-	Id     int    `json:"id"`
+	RPC    string `json:"jsonrpc"`
+	ID     int    `json:"id"`
 	Method string `json:"method"`
 }
 
 type Response struct {
-	Rpc   string `json:"jsonrpc"`
-	Id    int    `json:"id,omitempty"`
+	RPC   string `json:"jsonrpc"`
+	ID    int    `json:"id,omitempty"`
 	Error *Error `json:"error,omitempty"`
 }
 
@@ -20,6 +20,6 @@ type Error struct {
 }
 
 type Notification struct {
-	Rpc    string `json:"jsonrpc"`
+	RPC    string `json:"jsonrpc"`
 	Method string `json:"method"`
 }

@@ -29,7 +29,9 @@ func TestGenerateStructure(t *testing.T) {
 								Kind: "reference",
 								Name: "Position",
 							},
-							Documentation: "The position of this hint.\n\nIf multiple hints have the same position, they will be shown in the order\nthey appear in the response.",
+							Documentation: "The position of this hint.\n\n" +
+								"If multiple hints have the same position, they will be shown in the order\n" +
+								"they appear in the response.",
 						},
 						{
 							Name: "paddingLeft",
@@ -37,8 +39,11 @@ func TestGenerateStructure(t *testing.T) {
 								Kind: "base",
 								Name: "boolean",
 							},
-							Optional:      toPtr(true),
-							Documentation: "Render padding before the hint.\n\nNote: Padding should use the editor's background color, not the\nbackground color of the hint itself. That means padding can be used\nto visually align/separate an inlay hint.",
+							Optional: toPtr(true),
+							Documentation: "Render padding before the hint.\n\n" +
+								"Note: Padding should use the editor's background color, not the\n" +
+								"background color of the hint itself. That means padding can be used\n" +
+								"to visually align/separate an inlay hint.",
 						},
 						{
 							Name: "paddingRight",
@@ -46,8 +51,11 @@ func TestGenerateStructure(t *testing.T) {
 								Kind: "base",
 								Name: "boolean",
 							},
-							Optional:      toPtr(true),
-							Documentation: "Render padding after the hint.\n\nNote: Padding should use the editor's background color, not the\nbackground color of the hint itself. That means padding can be used\nto visually align/separate an inlay hint.",
+							Optional: toPtr(true),
+							Documentation: "Render padding after the hint.\n\n" +
+								"Note: Padding should use the editor's background color, not the\n" +
+								"background color of the hint itself. That means padding can be used\n" +
+								"to visually align/separate an inlay hint.",
 						},
 						{
 							Name: "data",
@@ -55,8 +63,9 @@ func TestGenerateStructure(t *testing.T) {
 								Kind: "reference",
 								Name: "LSPAny",
 							},
-							Optional:      toPtr(true),
-							Documentation: "A data entry field that is preserved on an inlay hint between\na `textDocument/inlayHint` and a `inlayHint/resolve` request.",
+							Optional: toPtr(true),
+							Documentation: "A data entry field that is preserved on an inlay hint between\n" +
+								"a `textDocument/inlayHint` and a `inlayHint/resolve` request.",
 						},
 						{
 							Name: "textEdits",
@@ -67,8 +76,11 @@ func TestGenerateStructure(t *testing.T) {
 									Name: "TextEdit",
 								},
 							},
-							Optional:      toPtr(true),
-							Documentation: "Optional text edits that are performed when accepting this inlay hint.\n\n*Note* that edits are expected to change the document so that the inlay\nhint (or its nearest variant) is now part of the document and the inlay\nhint itself is now obsolete.",
+							Optional: toPtr(true),
+							Documentation: "Optional text edits that are performed when accepting this inlay hint.\n\n" +
+								"*Note* that edits are expected to change the document so that the inlay\n" +
+								"hint (or its nearest variant) is now part of the document and the inlay\n" +
+								"hint itself is now obsolete.",
 						},
 						{
 							Name: "tooltip",
@@ -106,8 +118,10 @@ func TestGenerateStructure(t *testing.T) {
 									},
 								},
 							},
-							Optional:      toPtr(true),
-							Documentation: "The label of this hint. A human readable string or an array of\nInlayHintLabelPart label parts.\n\n*Note* that neither the string nor the label part can be empty.",
+							Optional: toPtr(true),
+							Documentation: "The label of this hint. A human readable string or an array of\n" +
+								"InlayHintLabelPart label parts.\n\n" +
+								"*Note* that neither the string nor the label part can be empty.",
 						},
 						{
 							Name: "kind",
@@ -115,8 +129,9 @@ func TestGenerateStructure(t *testing.T) {
 								Kind: "reference",
 								Name: "InlayHintKind",
 							},
-							Optional:      toPtr(true),
-							Documentation: "The kind of this hint. Can be omitted in which case the client\nshould fall back to a reasonable default.",
+							Optional: toPtr(true),
+							Documentation: "The kind of this hint. Can be omitted in which case the client\n" +
+								"should fall back to a reasonable default.",
 						},
 					},
 					// Documentation: "Inlay hint information.\n\n@since 3.17.0",
@@ -216,13 +231,105 @@ func TestGenerateStructure(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "Verify ToTitleCase handles UTF-8",
+			args: args{
+				s: Structure{
+					Name: "Utf8Struct",
+					Properties: []Properties{
+						{
+							Name: "café",
+							Type: Type{
+								Kind: "base",
+								Name: "string",
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type Utf8Struct struct {\n\tCafé string\n}\n"),
+		},
+		{
+			name: "Verify optional non-array becomes pointer",
+			args: args{
+				s: Structure{
+					Name: "Optional",
+					Properties: []Properties{
+						{
+							Name:     "count",
+							Optional: toPtr(true),
+							Type: Type{
+								Kind: "base",
+								Name: "integer",
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type Optional struct {\n\tCount *int\n}\n"),
+		},
+		{
+			name: "Verify optional array is not pointer",
+			args: args{
+				s: Structure{
+					Name: "OptionalArray",
+					Properties: []Properties{
+						{
+							Name:     "items",
+							Optional: toPtr(true),
+							Type: Type{
+								Kind:    "array",
+								Element: &Option{Kind: "base", Name: "string"},
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type OptionalArray struct {\n\tItems []string\n}\n"),
+		},
+		{
+			name: "Verify hidden mixins are skipped",
+			args: args{
+				s: Structure{
+					Name: "WithHiddenMixins",
+					Mixins: []Option{
+						{Kind: "reference", Name: "_Hidden"},
+						{Kind: "reference", Name: "Visible"},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type WithHiddenMixins struct {\n\tVisible\n}\n"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateStructure(tt.args.s)
 
 			assert.Equal(t, got.String(), tt.want.String())
+		})
+	}
+}
 
+func TestConvertType(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "boolean", in: "boolean", want: "bool"},
+		{name: "uinteger", in: "uinteger", want: "uint"},
+		{name: "integer", in: "integer", want: "int"},
+		{name: "decimal", in: "decimal", want: "float64"},
+		{name: "LSPAny", in: "LSPAny", want: "interface{}"},
+		{name: "URI", in: "URI", want: "string"},
+		{name: "DocumentUri", in: "DocumentUri", want: "string"},
+		{name: "empty", in: "", want: "interface{}"},
+		{name: "passthrough", in: "CustomType", want: "CustomType"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, ConvertType(tt.in))
 		})
 	}
 }

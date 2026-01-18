@@ -8,7 +8,7 @@ import (
 	"strconv"
 )
 
-const Version = "2.0" 
+const Version = "2.0"
 
 type BaseMessage struct {
 	Method string
@@ -59,7 +59,7 @@ func SplitFunc(data []byte, atEOF bool) (advance int, token []byte, err error) {
 		return 0, nil, fmt.Errorf("unable to convert Content-Length value [%v] to int: %v", contentLenRaw, err)
 	}
 
-	if len(content) < int(contentLen) {
+	if len(content) < contentLen {
 		return 0, nil, nil
 	}
 

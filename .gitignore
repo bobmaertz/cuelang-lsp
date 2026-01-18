@@ -26,6 +26,8 @@ go.work.sum
 # env file
 .env
 
+# Filesystem
+.DS_Store
 
 # Dont store metamodel 
 **/metaModel.json
