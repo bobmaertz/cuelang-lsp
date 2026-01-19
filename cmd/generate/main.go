@@ -85,7 +85,7 @@ func generateToFile(model *MetaModel) (err error) {
 	//nolint:gosec // generator writes user-specified output path
 	file, err := os.OpenFile(
 		outputFileName,
-		os.O_WRONLY|os.O_CREATE,
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
 		0o600,
 	)
 	if err != nil {
