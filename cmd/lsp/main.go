@@ -28,7 +28,12 @@ func main() {
 
 func getLogger(filename string) *log.Logger {
 	var file io.Writer
-	file, err := os.OpenFile(filename, os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0o666)
+	//nolint:gosec // path is user-specified log file
+	file, err := os.OpenFile(
+		filename,
+		os.O_CREATE|os.O_TRUNC|os.O_WRONLY,
+		0o600,
+	)
 	if err != nil {
 		// If the file cannot be opened, continue to serve
 		// TODO: need to refactor into a better option for this

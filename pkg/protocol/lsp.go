@@ -14,9 +14,9 @@ type Response struct {
 }
 
 type Error struct {
-	Code    string      `json:"code,omitempty"`
-	Message string      `json:"message,omitempty"`
-	Data    interface{} `json:"data,omitempty"`
+	Code    string `json:"code,omitempty"`
+	Message string `json:"message,omitempty"`
+	Data    any    `json:"data,omitempty"`
 }
 
 type Notification struct {

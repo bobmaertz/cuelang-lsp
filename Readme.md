@@ -22,35 +22,41 @@ A Language Server Protocol implementation for the CUE language.
 
 ## Features
 
-- Full cuelang file formatting in your IDE
+- **Document Formatting** - Format CUE files with proper indentation and spacing
+- **Go to Definition** - Jump to field and type definitions within your CUE files
+- **Document Synchronization** - Real-time updates as you edit
 
 ## Installation
 
+### Quick Start
+
 ```bash
-go get -u github.com/bobmaertz/cuelang-lsp
+go install github.com/bobmaertz/cuelang-lsp/cmd/lsp@latest
 ```
+
+For detailed installation instructions, editor setup (VS Code, Neovim), and debugging, see [INSTALL.md](INSTALL.md).
 
 ## Usage
 
-Describe how to use your CUE LSP, including any command-line options or integration with popular editors.
+Start the LSP server with optional debug logging:
 
 ```bash
-lsp [options]
+lsp [log-file-path]
 ```
 
-## Configuration
-
-The lsp currently supports a single filepath argument for a debug log. 
-```bash 
-lsp ~/out.log
+Example:
+```bash
+lsp /tmp/cuelang-lsp.log
 ```
+
+The server communicates via JSON-RPC over stdin/stdout and is designed to be used with LSP clients in editors like VS Code and Neovim.
 
 ## Development
 
 ### Prerequisites
 
-- Go 1.22 or higher
-- CUE 0.10.0 or higher
+- Go 1.25 or higher
+- CUE 0.15.3 or higher
 
 ### Building
 
@@ -66,48 +72,15 @@ make build
 make test
 ```
 
-### Running 
+### Running
 
-There are two commands in the /cmd directory, one for the language server and the other for formatting. The LSP binay can be run using the binary located at /bin/lsp 
+The LSP server is located at `cmd/lsp`. After building:
 
-To test the formatting functionality, use the following command. 
-```bash 
-go run fmtr <path/to/cuefile>.cue 
+```bash
+./bin/lsp /tmp/debug.log
 ```
 
-### Register LSP with Nvim 
-I've setup my local environment to use this LSP for *.cue files. 
-
-```lua
-
-local client = vim.lsp.start_client {
-    name = "cuelang-lsp",
-    cmd = { "/Users/bob/personal/cuelang-lsp/lsp" }
-}
-
-if not client then
-    vim.notify "cuelang-lsp did not start"
-    return
-end
-
-vim.api.nvim_create_autocmd("FileType", {
-    pattern = "cue",
-    callback = function()
-        vim.lsp.buf_attach_client(0, client)
-    end
-
-})
-
-```
-
-
-### Register Filetype for Cuelang 
-Only necessary if there the pattern used in the lsp configuration is not based on the standard treesitter filetype for cue.  
-
-```
-:setfiletype cue 
-:LspRestart
-```
+For editor integration examples, see [INSTALL.md](INSTALL.md).
 ## License
 
-This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.jjk
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.

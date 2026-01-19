@@ -45,9 +45,9 @@ func main() {
 	}
 
 	// TODO: Read in from stdin ..
-	b, err := os.ReadFile(inputFileName)
+	b, err := os.ReadFile(inputFileName) //nolint:gosec // generator reads user-specified input
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(10)
 	}
 
@@ -55,7 +55,7 @@ func main() {
 	model := &MetaModel{}
 	err = json.Unmarshal(b, model)
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(15)
 	}
 
@@ -76,13 +76,18 @@ func analyze(model *MetaModel) {
 // structures, enumerations, type aliases, and notifications to it.
 func generate(model *MetaModel) {
 	if err := generateToFile(model); err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(16)
 	}
 }
 
 func generateToFile(model *MetaModel) (err error) {
-	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
+	//nolint:gosec // generator writes user-specified output path
+	file, err := os.OpenFile(
+		outputFileName,
+		os.O_WRONLY|os.O_CREATE,
+		0o600,
+	)
 	if err != nil {
 		return err
 	}
@@ -112,6 +117,7 @@ func generateToFile(model *MetaModel) (err error) {
 			continue
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			fmt.Fprintf(os.Stderr, "error writing structure: %v\n", err)
 			return err
 		}
 	}
@@ -124,7 +130,7 @@ func generateToFile(model *MetaModel) (err error) {
 	}
 
 	for _, t := range model.TypeAliases {
-		// TODO: parse type correctly
+		// TODO: Properly parse type.
 		const typ = "interface{}"
 
 		// TODO: Fix SelectionRange self reference - meaning add support for optional fields.
@@ -146,6 +152,7 @@ func generateToFile(model *MetaModel) (err error) {
 			continue
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
+			fmt.Fprintf(os.Stderr, "error writing notification: %v\n", err)
 			return err
 		}
 	}

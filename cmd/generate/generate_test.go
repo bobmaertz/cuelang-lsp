@@ -304,8 +304,13 @@ func TestGenerateStructure(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateStructure(tt.args.s)
+			if tt.want == nil {
+				assert.Nil(t, got)
+				return
+			}
 
-			assert.Equal(t, got.String(), tt.want.String())
+			assert.NotNil(t, got)
+			assert.Equal(t, tt.want.String(), got.String())
 		})
 	}
 }

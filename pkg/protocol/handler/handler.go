@@ -7,12 +7,13 @@ import (
 	"os"
 	"strings"
 
+	"github.com/bobmaertz/cuelang-lsp/pkg/analysis"
 	"github.com/bobmaertz/cuelang-lsp/pkg/fmtr"
 	lsp "github.com/bobmaertz/cuelang-lsp/pkg/protocol"
 	"github.com/bobmaertz/cuelang-lsp/pkg/protocol/rpc"
 )
 
-func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte) {
+func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 	switch method {
 	case "initialize":
 		var request lsp.InitializeRequest
@@ -58,11 +59,15 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 
 		// Todo: fix this hacky implementation
 		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
-		c, _ := os.ReadFile(f)
-		l.Print(f)
+		c, err := os.ReadFile(f) //nolint:gosec // file path comes from client
+		if err != nil {
+			l.Printf("error reading file %s: %v", f, err)
+			return
+		}
+		l.Printf("%s", f)
 		update, err := fmtr.Format("", c)
 		if err != nil {
-			l.Printf("error %v", err)
+			l.Printf("error formatting %s: %v", f, err)
 			return
 		}
 
@@ -87,6 +92,63 @@ func HandleMessage(l *log.Logger, _ interface{}, method string, contents []byte)
 			return
 		}
 		response := lsp.NewTextCompletionResponse(request.ID)
+		out := rpc.EncodeMessage(response)
+		fmt.Print(out)
+	case "textDocument/definition":
+		var request lsp.DefinitionRequest
+		if err := json.Unmarshal(contents, &request); err != nil {
+			l.Printf("unable to unmarshal textDocument/definition request: %v\n", err)
+			return
+		}
+
+		// Read the file content
+		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
+		content, err := os.ReadFile(f) //nolint:gosec // file path comes from client
+		if err != nil {
+			l.Printf("error reading file %s: %v", f, err)
+			// Return empty result
+			response := lsp.NewDefinitionResponse(request.ID, []lsp.Location{})
+			out := rpc.EncodeMessage(response)
+			fmt.Print(out)
+			return
+		}
+
+		// Find definition
+		pos := analysis.Position{
+			Line:      request.Params.Position.Line,
+			Character: request.Params.Position.Character,
+		}
+
+		locations, err := analysis.FindDefinition(request.Params.TextDocument.URI, content, pos)
+		if err != nil {
+			l.Printf("error finding definition: %v", err)
+			// Return empty result on error
+			response := lsp.NewDefinitionResponse(request.ID, []lsp.Location{})
+			out := rpc.EncodeMessage(response)
+			fmt.Print(out)
+			return
+		}
+
+		// Convert analysis.Location to lsp.Location
+		lspLocations := make([]lsp.Location, len(locations))
+		for i, loc := range locations {
+			lspLocations[i] = lsp.Location{
+				URI: loc.URI,
+				Range: lsp.Range{
+					Start: lsp.Position{
+						Line:      loc.Range.Start.Line,
+						Character: loc.Range.Start.Character,
+					},
+					End: lsp.Position{
+						Line:      loc.Range.End.Line,
+						Character: loc.Range.End.Character,
+					},
+				},
+			}
+		}
+
+		l.Printf("definition> found %d locations for %s at %d:%d", len(lspLocations), f, pos.Line, pos.Character)
+		response := lsp.NewDefinitionResponse(request.ID, lspLocations)
 		out := rpc.EncodeMessage(response)
 		fmt.Print(out)
 	default:
