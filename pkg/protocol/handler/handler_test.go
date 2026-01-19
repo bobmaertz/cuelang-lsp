@@ -15,24 +15,23 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// captureStdout captures stdout during function execution
-func captureStdout(f func()) string {
+// captureStdout captures stdout during function execution.
+func captureStdout(t *testing.T, f func()) string {
+	t.Helper()
+
 	old := os.Stdout
 	r, w, err := os.Pipe()
-	if err != nil {
-		panic(err)
-	}
+	require.NoError(t, err)
 	os.Stdout = w
 
 	f()
 
-	w.Close()
+	require.NoError(t, w.Close())
 	os.Stdout = old
 
 	var buf bytes.Buffer
-	if _, err := io.Copy(&buf, r); err != nil {
-		panic(err) // Should never fail in tests, but handle it properly
-	}
+	_, err = io.Copy(&buf, r)
+	require.NoError(t, err)
 	return buf.String()
 }
 
@@ -57,7 +56,7 @@ func TestHandleMessage_Initialize(t *testing.T) {
 	contents, err := json.Marshal(request)
 	require.NoError(t, err)
 
-	output := captureStdout(func() {
+	output := captureStdout(t, func() {
 		HandleMessage(logger, nil, "initialize", contents)
 	})
 
@@ -219,7 +218,7 @@ func TestHandleMessage_Formatting(t *testing.T) {
 foo:    "bar"
 baz:   42
 `
-	err := os.WriteFile(testFile, []byte(unformattedCUE), 0644)
+	err := os.WriteFile(testFile, []byte(unformattedCUE), 0o600)
 	require.NoError(t, err)
 
 	request := lsp.TextFormatRequest{
@@ -238,7 +237,7 @@ baz:   42
 	contents, err := json.Marshal(request)
 	require.NoError(t, err)
 
-	output := captureStdout(func() {
+	output := captureStdout(t, func() {
 		HandleMessage(logger, nil, "textDocument/formatting", contents)
 	})
 
@@ -321,7 +320,7 @@ func TestHandleMessage_Completion(t *testing.T) {
 	contents, err := json.Marshal(request)
 	require.NoError(t, err)
 
-	output := captureStdout(func() {
+	output := captureStdout(t, func() {
 		HandleMessage(logger, nil, "textDocument/completion", contents)
 	})
 
@@ -366,7 +365,7 @@ server: {
 
 myServer: server
 `
-	err := os.WriteFile(testFile, []byte(cueContent), 0644)
+	err := os.WriteFile(testFile, []byte(cueContent), 0o600)
 	require.NoError(t, err)
 
 	// Request definition for "server" on line 7 (where myServer references it)
@@ -390,7 +389,7 @@ myServer: server
 	contents, err := json.Marshal(request)
 	require.NoError(t, err)
 
-	output := captureStdout(func() {
+	output := captureStdout(t, func() {
 		HandleMessage(logger, nil, "textDocument/definition", contents)
 	})
 
@@ -437,7 +436,7 @@ func TestHandleMessage_Definition_InvalidFile(t *testing.T) {
 	contents, err := json.Marshal(request)
 	require.NoError(t, err)
 
-	output := captureStdout(func() {
+	output := captureStdout(t, func() {
 		HandleMessage(logger, nil, "textDocument/definition", contents)
 	})
 

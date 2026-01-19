@@ -231,12 +231,110 @@ func TestGenerateStructure(t *testing.T) {
 			},
 			want: nil,
 		},
+		{
+			name: "Verify ToTitleCase handles UTF-8",
+			args: args{
+				s: Structure{
+					Name: "Utf8Struct",
+					Properties: []Properties{
+						{
+							Name: "café",
+							Type: Type{
+								Kind: "base",
+								Name: "string",
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type Utf8Struct struct {\n\tCafé string\n}\n"),
+		},
+		{
+			name: "Verify optional non-array becomes pointer",
+			args: args{
+				s: Structure{
+					Name: "Optional",
+					Properties: []Properties{
+						{
+							Name:     "count",
+							Optional: toPtr(true),
+							Type: Type{
+								Kind: "base",
+								Name: "integer",
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type Optional struct {\n\tCount *int\n}\n"),
+		},
+		{
+			name: "Verify optional array is not pointer",
+			args: args{
+				s: Structure{
+					Name: "OptionalArray",
+					Properties: []Properties{
+						{
+							Name:     "items",
+							Optional: toPtr(true),
+							Type: Type{
+								Kind:    "array",
+								Element: &Option{Kind: "base", Name: "string"},
+							},
+						},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type OptionalArray struct {\n\tItems []string\n}\n"),
+		},
+		{
+			name: "Verify hidden mixins are skipped",
+			args: args{
+				s: Structure{
+					Name: "WithHiddenMixins",
+					Mixins: []Option{
+						{Kind: "reference", Name: "_Hidden"},
+						{Kind: "reference", Name: "Visible"},
+					},
+				},
+			},
+			want: bytes.NewBufferString("type WithHiddenMixins struct {\n\tVisible\n}\n"),
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got := GenerateStructure(tt.args.s)
+			if tt.want == nil {
+				assert.Nil(t, got)
+				return
+			}
 
-			assert.Equal(t, got.String(), tt.want.String())
+			assert.NotNil(t, got)
+			assert.Equal(t, tt.want.String(), got.String())
+		})
+	}
+}
+
+func TestConvertType(t *testing.T) {
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{name: "boolean", in: "boolean", want: "bool"},
+		{name: "uinteger", in: "uinteger", want: "uint"},
+		{name: "integer", in: "integer", want: "int"},
+		{name: "decimal", in: "decimal", want: "float64"},
+		{name: "LSPAny", in: "LSPAny", want: "interface{}"},
+		{name: "URI", in: "URI", want: "string"},
+		{name: "DocumentUri", in: "DocumentUri", want: "string"},
+		{name: "empty", in: "", want: "interface{}"},
+		{name: "passthrough", in: "CustomType", want: "CustomType"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, ConvertType(tt.in))
 		})
 	}
 }

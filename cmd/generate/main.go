@@ -1,3 +1,11 @@
+// Command generate is a small code generator that turns the VS Code LSP metamodel
+// (metaModel.json) into Go type definitions.
+//
+// Usage:
+//
+//	go run ./cmd/generate generate -f <metamodel.json> -o <output.go> -p <package>
+//
+// The generated output is plain Go code written to `-o`.
 package main
 
 import (
@@ -21,15 +29,13 @@ var (
 	outputFileName string
 )
 
-func init() {
+func main() {
 	flag.StringVar(&inputFileName, "f", defaultInputFile, "location for metamodel file")
 	flag.StringVar(&packageName, "p", defaultPackageName, "package name for generated code")
 	flag.StringVar(&outputFileName, "o", defaultOutputFile, "location for output file")
-}
 
-func main() {
-	flag.Parse()
 	flag.Usage = usage
+	flag.Parse()
 
 	args := flag.Args()
 
@@ -39,9 +45,9 @@ func main() {
 	}
 
 	// TODO: Read in from stdin ..
-	b, err := os.ReadFile(inputFileName)
+	b, err := os.ReadFile(inputFileName) //nolint:gosec // generator reads user-specified input
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(10)
 	}
 
@@ -49,7 +55,7 @@ func main() {
 	model := &MetaModel{}
 	err = json.Unmarshal(b, model)
 	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(15)
 	}
 
@@ -69,28 +75,42 @@ func analyze(model *MetaModel) {
 // It creates a file with the specified package name and writes the
 // structures, enumerations, type aliases, and notifications to it.
 func generate(model *MetaModel) {
-	// Create output file
-	file, err := os.OpenFile(outputFileName, os.O_WRONLY|os.O_CREATE, 0o644)
-	if err != nil {
-		os.Stderr.Write([]byte(err.Error()))
+	if err := generateToFile(model); err != nil {
+		_, _ = os.Stderr.Write([]byte(err.Error()))
 		os.Exit(16)
 	}
-	defer file.Close()
+}
+
+func generateToFile(model *MetaModel) (err error) {
+	//nolint:gosec // generator writes user-specified output path
+	file, err := os.OpenFile(
+		outputFileName,
+		os.O_WRONLY|os.O_CREATE|os.O_TRUNC,
+		0o600,
+	)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		closeErr := file.Close()
+		if err == nil {
+			err = closeErr
+		}
+	}()
 
 	fileWriter := bufio.NewWriter(file)
 	defer func() {
-		// Dont forget to flush to file or might lose the info in the buffer
-		err = fileWriter.Flush()
-		if err != nil {
-			os.Stderr.Write([]byte(err.Error()))
-			os.Exit(16)
+		flushErr := fileWriter.Flush()
+		if err == nil {
+			err = flushErr
 		}
 	}()
 
 	h := fmt.Sprintf("package %s\n\n", packageName)
-	fmt.Fprint(fileWriter, h)
+	if _, err := fmt.Fprint(fileWriter, h); err != nil {
+		return err
+	}
 
-	// For each structure..
 	for _, s := range model.Structures {
 		buf := GenerateStructure(s)
 		if buf == nil {
@@ -98,32 +118,32 @@ func generate(model *MetaModel) {
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing structure: %v\n", err)
-			return
-		}
-		if err := fileWriter.Flush(); err != nil {
-			fmt.Fprintf(os.Stderr, "error flushing: %v\n", err)
-			return
+			return err
 		}
 	}
 
-	// For each enumeration..
 	for _, e := range model.Enumerations {
 		start := "type %s %s\n"
-		fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name))
+		if _, err := fmt.Fprintf(fileWriter, start, e.Name, ConvertType(e.Type.Name)); err != nil {
+			return err
+		}
 	}
 
-	// For each alias..
 	for _, t := range model.TypeAliases {
 		// TODO: Properly parse type.
-		typ := "any"
+		const typ = "interface{}"
 
 		// TODO: Fix SelectionRange self reference - meaning add support for optional fields.
 		doc := "// %s %s\n"
 		start := "type %s %s\n"
 
 		dv := strings.ReplaceAll(t.Documentation, "\n", " ")
-		fmt.Fprintf(fileWriter, doc, t.Name, dv)
-		fmt.Fprintf(fileWriter, start, t.Name, typ)
+		if _, err := fmt.Fprintf(fileWriter, doc, t.Name, dv); err != nil {
+			return err
+		}
+		if _, err := fmt.Fprintf(fileWriter, start, t.Name, typ); err != nil {
+			return err
+		}
 	}
 
 	for _, n := range model.Notifications {
@@ -133,16 +153,15 @@ func generate(model *MetaModel) {
 		}
 		if _, err := fileWriter.Write(buf.Bytes()); err != nil {
 			fmt.Fprintf(os.Stderr, "error writing notification: %v\n", err)
-			return
-		}
-		if err := fileWriter.Flush(); err != nil {
-			fmt.Fprintf(os.Stderr, "error flushing: %v\n", err)
-			return
+			return err
 		}
 	}
-	// TODO Requests
+
+	return nil
 }
 
+// ConvertType maps metamodel base types to Go types.
+// Unknown types are returned as-is.
 func ConvertType(s string) string {
 	switch s {
 	case "boolean":
@@ -154,7 +173,7 @@ func ConvertType(s string) string {
 	case "decimal":
 		return "float64"
 	case "LSPAny":
-		return "any"
+		return "interface{}"
 	case "URI":
 		// This is a base type but doesnt have a specific definition associated with it.
 		// using string for now but consider unstable
@@ -165,7 +184,7 @@ func ConvertType(s string) string {
 		// TODO
 		return "string"
 	case "":
-		return "any"
+		return "interface{}"
 	}
 
 	return s

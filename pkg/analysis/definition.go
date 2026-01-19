@@ -1,8 +1,6 @@
 package analysis
 
 import (
-	"fmt"
-
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/parser"
 	"cuelang.org/go/cue/token"
@@ -35,7 +33,7 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 	}
 
 	// Convert LSP position (0-based) to token position for searching
-	targetLine := pos.Line + 1    // CUE uses 1-based line numbers
+	targetLine := pos.Line + 1      // CUE uses 1-based line numbers
 	targetChar := pos.Character + 1 // CUE uses 1-based columns
 
 	var foundIdent *ast.Ident
@@ -101,8 +99,8 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 						URI: uri,
 						Range: Range{
 							Start: Position{
-								Line:      line - 1,      // Convert to 0-based
-								Character: col - 1,       // Convert to 0-based
+								Line:      line - 1, // Convert to 0-based
+								Character: col - 1,  // Convert to 0-based
 							},
 							End: Position{
 								Line:      line - 1,
@@ -145,50 +143,4 @@ func FindDefinition(uri string, content []byte, pos Position) ([]Location, error
 
 	// No definition found
 	return []Location{}, nil
-}
-
-// positionToOffset converts a 0-based line/char position to byte offset
-func positionToOffset(content []byte, line, char int) int {
-	currentLine := 0
-	currentCol := 0
-
-	for i, b := range content {
-		if currentLine == line && currentCol == char {
-			return i
-		}
-		if b == '\n' {
-			currentLine++
-			currentCol = 0
-		} else {
-			currentCol++
-		}
-	}
-	return len(content)
-}
-
-// offsetToPosition converts a byte offset to 0-based line/char position
-func offsetToPosition(content []byte, offset int) (int, int) {
-	if offset > len(content) {
-		offset = len(content)
-	}
-
-	line := 0
-	col := 0
-	for i := 0; i < offset && i < len(content); i++ {
-		if content[i] == '\n' {
-			line++
-			col = 0
-		} else {
-			col++
-		}
-	}
-	return line, col
-}
-
-// debugPos formats a position for debugging
-func debugPos(content []byte, pos token.Pos) string {
-	if !pos.IsValid() {
-		return "invalid position"
-	}
-	return fmt.Sprintf("line %d, col %d (offset %d)", pos.Line(), pos.Column(), pos.Offset())
 }

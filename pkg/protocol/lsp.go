@@ -1,6 +1,6 @@
 package protocol
 
-/* LSP defines the interation and types of the LSP protocol.*/
+// LSP defines the interaction and types of the LSP protocol.
 type Request struct {
 	RPC    string `json:"jsonrpc"`
 	ID     int    `json:"id"`

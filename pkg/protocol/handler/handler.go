@@ -44,8 +44,8 @@ func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 
 		l.Printf("didChange> %v\n", notification.Params.TextDocument.URI)
 		// for _, change := range notification.Params.ContentChanges {
-		// 	state.UpdateDocument(notification.Params.TextDocument.URI, change.Text)
-		// }
+		//	state.UpdateDocument(notification.Params.TextDocument.URI, change.Text)
+		//}
 	case "textDocument/willSave":
 		l.Printf("will Save: %v", string(contents))
 	case "textDocument/didSave":
@@ -59,7 +59,7 @@ func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 
 		// Todo: fix this hacky implementation
 		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
-		c, err := os.ReadFile(f)
+		c, err := os.ReadFile(f) //nolint:gosec // file path comes from client
 		if err != nil {
 			l.Printf("error reading file %s: %v", f, err)
 			return
@@ -73,7 +73,8 @@ func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 
 		response := FormattingResponse{
 			Response: lsp.Response{
-				ID: request.ID,
+				RPC: rpc.Version,
+				ID:  request.ID,
 			},
 		}
 		t := TextEdit{
@@ -102,7 +103,7 @@ func HandleMessage(l *log.Logger, _ any, method string, contents []byte) {
 
 		// Read the file content
 		f := strings.TrimPrefix(request.Params.TextDocument.URI, "file://")
-		content, err := os.ReadFile(f)
+		content, err := os.ReadFile(f) //nolint:gosec // file path comes from client
 		if err != nil {
 			l.Printf("error reading file %s: %v", f, err)
 			// Return empty result

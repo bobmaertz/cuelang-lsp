@@ -24,7 +24,7 @@ func main() {
 	}
 
 	fname := fileInfo.Name()
-	b, rErr := os.ReadFile(filePath)
+	b, rErr := os.ReadFile(filePath) //nolint:gosec // CLI tool reads the provided filename
 	if rErr != nil {
 		fmt.Fprintf(os.Stderr, "error reading file: %v", rErr)
 		os.Exit(11)

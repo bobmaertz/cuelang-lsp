@@ -1,19 +1,32 @@
 package main
 
+// This file contains the string-building helpers used by the generator.
+// The generator intentionally returns buffers so callers can decide how/when
+// to write and format output.
+
 import (
 	"bytes"
 	"fmt"
 	"strings"
+	"unicode"
+	"unicode/utf8"
 )
 
-// ToToTitleCase converts the first character of a string to uppercase
+// ToTitleCase converts the first character of a string to uppercase
 // and returns the modified string. If the string is empty,
 // it returns the empty string
 func ToTitleCase(s string) string {
 	if s == "" {
 		return s
 	}
-	return strings.ToUpper(string(s[0])) + s[1:]
+
+	r, size := utf8.DecodeRuneInString(s)
+	if r == utf8.RuneError && size == 1 {
+		// Invalid UTF-8; fall back to original string.
+		return s
+	}
+
+	return string(unicode.ToUpper(r)) + s[size:]
 }
 
 // GenerateStructure generates a Go structure definition from the provided
