@@ -1,9 +1,9 @@
 module github.com/bobmaertz/cuelang-lsp
 
-go 1.25
+go 1.25.0
 
 require (
-	cuelang.org/go v0.15.3
+	cuelang.org/go v0.16.0
 	github.com/stretchr/testify v1.11.1
 )
 
